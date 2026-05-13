@@ -25,62 +25,62 @@ const urgentTasks = [
   {
     id: 1,
     type: "risk",
-    title: "3 名学员本周连续 3 天未完成新品课",
-    desc: "李明、王芳、赵强 · 下周有产品推介活动 · 建议今天联系",
+    title: "临港星河湾群人数低于 50% 目标线",
+    desc: "当前 101 / 240 · 2 天无增长 · 今天需补资源入口和群内拉新动作",
     urgency: "urgent",
-    action: "查看并跟进",
+    action: "查看异常看板",
     path: "/workbench/dashboard",
-    module: "带教看板",
+    module: "社区运营",
   },
   {
     id: 2,
     type: "sync",
-    title: "防水规范 v3.1 待推送确认 · 影响 12 名销售",
-    desc: "更新内容已就绪 · 待完成：确认影响范围、触发重学任务",
+    title: "群人数 / 添加微信跨表对账异常",
+    desc: "嘉定云著销售明细与月度汇总不一致 · 需要先校验口径再看转化",
     urgency: "urgent",
-    action: "确认并推送",
-    path: "/workbench/info-sync",
-    module: "信息同步",
+    action: "去数据治理",
+    path: "/workbench/content-ops",
+    module: "数据口径",
   },
   {
     id: 3,
     type: "order",
-    title: "张国栋订单 #2024-0312 有参数异常",
-    desc: "规格与设计图不符 · 工厂已暂停生产等待确认",
+    title: "青浦悦府 QC 为 0，样板间未启动",
+    desc: "QC 目标 4 / 当前 0 · 样板间候选人和宣传节点缺失",
     urgency: "urgent",
-    action: "处理异常",
-    path: "/workbench/order-review",
-    module: "审单回流",
+    action: "拆任务闭环",
+    path: "/workbench/dashboard/tasks",
+    module: "样板间",
   },
 ];
 
 const pendingTasks = [
   {
     id: 4,
-    title: "本月培训完成率 64%（目标 80%）· 差 6 人",
-    desc: "差距最大：云岚石新品 · 建议推送定向补训",
+    title: "青浦店资源缺口 5 个小区 · 明天前需补计划",
+    desc: "先补 3 个可开群小区，再明确群开拓人和可开群时间",
     urgency: "warning",
-    action: "推送补训",
+    action: "查看资源盘点",
     path: "/workbench/content-ops",
-    module: "培训运营",
+    module: "社区运营",
   },
   {
     id: 5,
-    title: "客户李总需求交接 · 设计方案待确认",
-    desc: "需求已录入 · 设计师尚未确认接收 · 周五前需定稿",
+    title: "一对一转化跟进弱 · 需抽查销售明细",
+    desc: "添加微信后缺持续跟进记录 · 本周沉淀 3 条邀约到店话术",
     urgency: "warning",
-    action: "催确认",
-    path: "/workbench/collab",
-    module: "销设协同",
+    action: "看转化管理",
+    path: "/workbench/content-ops",
+    module: "转化管理",
   },
   {
     id: 6,
-    title: "2 条转岗申请待初审 · 1 条审批结果待通知",
-    desc: "申请发起、审批流转和身份生效提醒已集中到统一入口处理",
+    title: "活动复盘模板待补 · 新人培养资料散落",
+    desc: "直播、视频号、活动筹备和复盘资料需要归到阶段培养路径",
     urgency: "warning",
-    action: "进入审批中心",
-    path: "/workbench/approvals",
-    module: "审批·申请",
+    action: "看新人培养",
+    path: "/workbench/content-ops",
+    module: "培养沉淀",
   },
 ];
 
@@ -91,20 +91,36 @@ const completedTasks = [
 
 const moduleCards = [
   {
+    label: "社区运营",
+    icon: <Layers size={20} />,
+    color: "bg-green-50 text-green-600",
+    path: "/workbench/content-ops",
+    badge: "12 风险",
+    badgeColor: "bg-red-100 text-[#DC2626]",
+  },
+  {
+    label: "异常看板",
+    icon: <BarChart3 size={20} />,
+    color: "bg-red-50 text-[#DC2626]",
+    path: "/workbench/dashboard",
+    badge: "9 对账",
+    badgeColor: "bg-amber-100 text-[#B45309]",
+  },
+  {
+    label: "运营任务",
+    icon: <CheckCircle2 size={20} />,
+    color: "bg-blue-50 text-blue-600",
+    path: "/workbench/dashboard/tasks",
+    badge: "5 待闭环",
+    badgeColor: "bg-red-100 text-[#DC2626]",
+  },
+  {
     label: "信息同步中心",
     icon: <RefreshCw size={20} />,
     color: "bg-blue-50 text-blue-600",
     path: "/workbench/info-sync",
-    badge: "2 待确认",
-    badgeColor: "bg-red-100 text-[#DC2626]",
-  },
-  {
-    label: "培训运营",
-    icon: <Layers size={20} />,
-    color: "bg-green-50 text-green-600",
-    path: "/workbench/content-ops",
-    badge: "1 待推送",
-    badgeColor: "bg-amber-100 text-[#F59E0B]",
+    badge: "规则口径",
+    badgeColor: "bg-[#EEF4FF] text-[#2F5FD0]",
   },
   {
     label: "销设协同",
@@ -130,17 +146,14 @@ const moduleCards = [
     badge: "2 待处理",
     badgeColor: "bg-amber-100 text-[#B45309]",
   },
-  {
-    label: "带教看板",
-    icon: <BarChart3 size={20} />,
-    color: "bg-indigo-50 text-indigo-600",
-    path: "/workbench/dashboard",
-    badge: "3 风险",
-    badgeColor: "bg-red-100 text-[#DC2626]",
-  },
 ];
 
+const showStaffCompletedPanel = false;
+const showStaffSidebar = false;
+
 export default function Workbench() {
+
+
   const navigate = useNavigate();
   const { currentIdentity, user } = useApp();
   const isStaff = currentIdentity === "staff";
@@ -422,8 +435,9 @@ export default function Workbench() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 md:px-6 -mt-5">
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="md:col-span-2 space-y-4">
+        <div className={`grid gap-4 ${showStaffSidebar ? "md:grid-cols-3" : "grid-cols-1"}`}>
+          <div className={`${showStaffSidebar ? "md:col-span-2" : ""} space-y-4`}>
+
             <div className="bg-white rounded-xl p-4 shadow-sm">
               <div className="grid grid-cols-3 gap-2">
                 {moduleCards.map((m) => (
@@ -480,89 +494,95 @@ export default function Workbench() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
-                <CheckCircle2 size={15} className="text-[#16A34A]" />
-                <span className="text-sm font-medium text-gray-900">今日已完成</span>
-              </div>
-              <div className="divide-y divide-gray-50">
-                {completedTasks.map((task) => (
-                  <div key={task.title} className="px-4 py-3 flex items-center gap-3">
-                    <CheckCircle2 size={14} className="text-[#16A34A] flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-400 line-through">{task.title}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{task.module} · {task.time}</p>
+            {showStaffCompletedPanel && (
+              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+                  <CheckCircle2 size={15} className="text-[#16A34A]" />
+                  <span className="text-sm font-medium text-gray-900">今日已完成</span>
+                </div>
+                <div className="divide-y divide-gray-50">
+                  {completedTasks.map((task) => (
+                    <div key={task.title} className="px-4 py-3 flex items-center gap-3">
+                      <CheckCircle2 size={14} className="text-[#16A34A] flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-400 line-through">{task.title}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{task.module} · {task.time}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
+
           </div>
 
-          <div className="space-y-4">
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <p className="text-sm font-medium text-gray-900 mb-3">各模块状态</p>
-              <div className="space-y-2">
-                {[
-                  { label: "信息同步", status: "2 待确认", color: "text-[#DC2626]", bg: "bg-red-50" },
-                  { label: "培训运营", status: "完成率 64%", color: "text-[#F59E0B]", bg: "bg-amber-50" },
-                  { label: "审单回流", status: "1 异常订单", color: "text-[#DC2626]", bg: "bg-red-50" },
-                  { label: "销设协同", status: "1 待确认", color: "text-[#F59E0B]", bg: "bg-amber-50" },
-                  { label: "审批申请", status: "2 待初审", color: "text-[#B45309]", bg: "bg-amber-50" },
-                  { label: "带教看板", status: "3 风险学员", color: "text-[#DC2626]", bg: "bg-red-50" },
-                ].map((item) => (
-                  <div key={item.label} className="flex items-center justify-between">
-                    <span className="text-xs text-gray-600">{item.label}</span>
-                    <span className={`text-xs px-1.5 py-0.5 rounded ${item.bg} ${item.color}`}>{item.status}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <div className="flex items-center gap-2 mb-3">
-                <GitBranch size={14} className="text-[#2F5FD0]" />
-                <p className="text-sm font-medium text-gray-900">设计收口总览</p>
-              </div>
-              <div className="space-y-2">
-                {[
-                  { label: "查看产品蓝图", desc: "统一架构图 + 页面关系图", path: "/workbench/blueprint" },
-                  { label: "查看双端映射验收", desc: "桌面端 / 手机端映射与差异边界", path: "/workbench/dual-end-acceptance" },
-                  { label: "查看信息同步链路", desc: "更新详情 / 影响范围 / 下游同步", path: "/workbench/info-sync" },
-                  { label: "查看审单回流拆解", desc: "异常详情 / 责任归因 / 回流计划", path: "/workbench/order-review" },
-                ].map((item) => (
-                  <button
-                    key={item.label}
-                    onClick={() => navigate(item.path)}
-                    className="w-full text-left rounded-xl border border-gray-200 bg-[#FAFBFC] px-3 py-2.5 hover:bg-gray-50 transition-colors"
-                  >
-                    <p className="text-xs font-medium text-gray-800">{item.label}</p>
-                    <p className="text-xs text-gray-500 mt-1">{item.desc}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <p className="text-sm font-medium text-gray-900 mb-3">近期操作记录</p>
-              <div className="space-y-3">
-                {[
-                  { action: "推送了防水规范更新通知", time: "10:30" },
-                  { action: "审核并回流了 2 条售后异常", time: "昨天" },
-                  { action: "新增了 1 个陪练话术场景", time: "昨天" },
-                  { action: "集中处理 2 条审批与申请提醒", time: "今天" },
-                ].map((log) => (
-                  <div key={`${log.action}-${log.time}`} className="flex items-start gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0 mt-1.5" />
-                    <div>
-                      <p className="text-xs text-gray-600">{log.action}</p>
-                      <p className="text-xs text-gray-400">{log.time}</p>
+          {showStaffSidebar && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-xl p-4 shadow-sm">
+                <p className="text-sm font-medium text-gray-900 mb-3">各模块状态</p>
+                <div className="space-y-2">
+                  {[
+                    { label: "信息同步", status: "2 待确认", color: "text-[#DC2626]", bg: "bg-red-50" },
+                    { label: "社区运营", status: "高风险 12", color: "text-[#F59E0B]", bg: "bg-amber-50" },
+                    { label: "审单回流", status: "1 异常订单", color: "text-[#DC2626]", bg: "bg-red-50" },
+                    { label: "销设协同", status: "1 待确认", color: "text-[#F59E0B]", bg: "bg-amber-50" },
+                    { label: "审批申请", status: "2 待初审", color: "text-[#B45309]", bg: "bg-amber-50" },
+                    { label: "异常看板", status: "12 风险小区", color: "text-[#DC2626]", bg: "bg-red-50" },
+                  ].map((item) => (
+                    <div key={item.label} className="flex items-center justify-between">
+                      <span className="text-xs text-gray-600">{item.label}</span>
+                      <span className={`text-xs px-1.5 py-0.5 rounded ${item.bg} ${item.color}`}>{item.status}</span>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl p-4 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <GitBranch size={14} className="text-[#2F5FD0]" />
+                  <p className="text-sm font-medium text-gray-900">设计收口总览</p>
+                </div>
+                <div className="space-y-2">
+                  {[
+                    { label: "查看产品蓝图", desc: "统一架构图 + 页面关系图", path: "/workbench/blueprint" },
+                    { label: "查看双端映射验收", desc: "桌面端 / 手机端映射与差异边界", path: "/workbench/dual-end-acceptance" },
+                    { label: "查看信息同步链路", desc: "更新详情 / 影响范围 / 下游同步", path: "/workbench/info-sync" },
+                    { label: "查看审单回流拆解", desc: "异常详情 / 责任归因 / 回流计划", path: "/workbench/order-review" },
+                  ].map((item) => (
+                    <button
+                      key={item.label}
+                      onClick={() => navigate(item.path)}
+                      className="w-full text-left rounded-xl border border-gray-200 bg-[#FAFBFC] px-3 py-2.5 hover:bg-gray-50 transition-colors"
+                    >
+                      <p className="text-xs font-medium text-gray-800">{item.label}</p>
+                      <p className="text-xs text-gray-500 mt-1">{item.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl p-4 shadow-sm">
+                <p className="text-sm font-medium text-gray-900 mb-3">近期操作记录</p>
+                <div className="space-y-3">
+                  {[
+                    { action: "推送了防水规范更新通知", time: "10:30" },
+                    { action: "审核并回流了 2 条售后异常", time: "昨天" },
+                    { action: "新增了 1 个陪练话术场景", time: "昨天" },
+                    { action: "集中处理 2 条审批与申请提醒", time: "今天" },
+                  ].map((log) => (
+                    <div key={`${log.action}-${log.time}`} className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0 mt-1.5" />
+                      <div>
+                        <p className="text-xs text-gray-600">{log.action}</p>
+                        <p className="text-xs text-gray-400">{log.time}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          )}
+
         </div>
       </div>
     </div>

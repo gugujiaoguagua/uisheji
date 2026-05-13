@@ -17,7 +17,11 @@ import { impactTone, nodeTone, updates } from "../data/infoSyncData";
 
 type SyncDetailTab = "summary" | "impact" | "sync";
 
+const showSummaryChangesPanel = false;
+const showSyncReminderPanel = false;
+
 export default function InfoSync() {
+
   const navigate = useNavigate();
   const [selectedId, setSelectedId] = useState(updates[0].id);
   const [detailTab, setDetailTab] = useState<SyncDetailTab>("summary");
@@ -188,19 +192,22 @@ export default function InfoSync() {
                     </div>
                   ))}
                 </div>
-                <div className="bg-white rounded-xl shadow-sm p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <FileText size={15} className="text-[#2F5FD0]" />
-                    <span className="text-sm font-medium text-gray-900">本次变更详情</span>
+                {showSummaryChangesPanel && (
+                  <div className="bg-white rounded-xl shadow-sm p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <FileText size={15} className="text-[#2F5FD0]" />
+                      <span className="text-sm font-medium text-gray-900">本次变更详情</span>
+                    </div>
+                    <div className="space-y-2">
+                      {selectedUpdate.changes.map((change) => (
+                        <div key={change} className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-3 py-3 text-xs text-gray-600 leading-relaxed">
+                          {change}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    {selectedUpdate.changes.map((change) => (
-                      <div key={change} className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-3 py-3 text-xs text-gray-600 leading-relaxed">
-                        {change}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                )}
+
               </>
             )}
 
@@ -320,15 +327,18 @@ export default function InfoSync() {
               </button>
             </div>
 
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <div className="flex items-center gap-2 mb-3">
-                <Target size={14} className="text-[#2F5FD0]" />
-                <span className="text-sm font-medium text-gray-900">同步链路提醒</span>
+            {showSyncReminderPanel && (
+              <div className="bg-white rounded-xl p-4 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <Target size={14} className="text-[#2F5FD0]" />
+                  <span className="text-sm font-medium text-gray-900">同步链路提醒</span>
+                </div>
+                <div className="rounded-xl bg-amber-50 border border-amber-100 px-3 py-3 text-xs text-amber-700 leading-relaxed">
+                  当前还有 {pendingSyncCount} 个下游同步节点未完成，其中 {pendingPracticeCount} 个与 AI 陪练场景有关。
+                </div>
               </div>
-              <div className="rounded-xl bg-amber-50 border border-amber-100 px-3 py-3 text-xs text-amber-700 leading-relaxed">
-                当前还有 {pendingSyncCount} 个下游同步节点未完成，其中 {pendingPracticeCount} 个与 AI 陪练场景有关。
-              </div>
-            </div>
+            )}
+
           </div>
         </div>
       </div>

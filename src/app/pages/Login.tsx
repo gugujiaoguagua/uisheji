@@ -11,13 +11,19 @@ import {
   Clock,
   AlertTriangle,
   FileCheck,
+  MapPinned,
+  Palette,
+  TrendingUp,
 } from "lucide-react";
 import {
   useApp,
   Identity,
+  LearnerRole,
   StaffApprovalStatus,
   getIdentityLabel,
+  getLearnerRoleMeta,
   getStaffApprovalStatusMeta,
+  learnerRoleProfiles,
 } from "../context/AppContext";
 
 const previewBase = {
@@ -29,6 +35,28 @@ const previewBase = {
 };
 
 const flowSteps = ["学员达成条件", "提交申请", "审批流转", "开通后可切换工作人员视角"];
+
+const loginTextVisibility = {
+  brandSubtitle: false,
+  accountStatusDescription: false,
+  identitySelectionHint: false,
+  staffOptionDescription: false,
+  learnerRoleHint: false,
+  learnerRoleCountBadge: false,
+  learnerRoleDescription: false,
+  identityFlowSection: false,
+} as const;
+
+
+const learnerRoleIcons: Record<LearnerRole, typeof BookOpen> = {
+  sales: BookOpen,
+  community_ops: MapPinned,
+  ops_manager: TrendingUp,
+  designer: Palette,
+};
+
+const learnerRoleKeys: LearnerRole[] = ["sales", "community_ops", "designer"];
+
 
 const approvalStatusOptions: { key: StaffApprovalStatus; label: string }[] = [
   { key: "not_applied", label: "需审批开通" },
@@ -162,6 +190,7 @@ export default function Login() {
   const [password, setPassword] = useState("••••••••");
   const [showPassword, setShowPassword] = useState(false);
   const [selectedIdentity, setSelectedIdentity] = useState<Identity | null>(null);
+  const [selectedLearnerRole, setSelectedLearnerRole] = useState<LearnerRole>("sales");
   const [previewStatus, setPreviewStatus] = useState<StaffApprovalStatus>("not_applied");
   const { login } = useApp();
   const navigate = useNavigate();
@@ -184,11 +213,13 @@ export default function Login() {
 
   const handleIdentityConfirm = () => {
     if (!selectedIdentity) return;
+    const learnerRoleMeta = getLearnerRoleMeta(selectedLearnerRole);
     login(selectedIdentity, {
       name: previewAccount.name,
       avatar: previewAccount.avatar,
-      role: previewAccount.role,
+      role: selectedIdentity === "student" ? learnerRoleMeta.roleTitle : previewAccount.role,
       department: previewAccount.department,
+      learnerRole: selectedLearnerRole,
       primaryIdentity: previewAccount.primaryIdentity,
       availableIdentities: previewAccount.availableIdentities,
       staffApprovalStatus: previewAccount.staffApprovalStatus,
@@ -246,8 +277,9 @@ export default function Login() {
             />
             <div>
               <div className="text-white text-[27px] font-semibold leading-tight">智柚</div>
-              <div className="text-white/50 text-lg mt-1">统一业务训练与协同系统</div>
+              {loginTextVisibility.brandSubtitle && <div className="text-white/50 text-lg mt-1">统一业务训练与协同系统</div>}
             </div>
+
           </div>
 
           <h1 className="text-white text-3xl font-semibold mb-4 leading-tight">培训信息架构可视化平台</h1>
@@ -281,8 +313,9 @@ export default function Login() {
             />
             <div>
               <div className="text-gray-900 font-semibold">智柚</div>
-              <div className="text-gray-400 text-xs">统一业务训练与协同系统</div>
+              {loginTextVisibility.brandSubtitle && <div className="text-gray-400 text-xs">统一业务训练与协同系统</div>}
             </div>
+
           </div>
 
           {step === "login" ? (
@@ -410,7 +443,10 @@ export default function Login() {
                     <p className="text-xs text-gray-600 mt-1">{previewAccount.updatedAt}</p>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 leading-relaxed mt-2">{approvalMeta.description}</p>
+                {loginTextVisibility.accountStatusDescription && (
+                  <p className="text-xs text-gray-500 leading-relaxed mt-2">{approvalMeta.description}</p>
+                )}
+
                 {!previewAccount.availableIdentities.includes("staff") && (
                   <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 flex items-start gap-2">
                     <AlertTriangle size={14} className="text-amber-700 flex-shrink-0 mt-0.5" />
@@ -422,11 +458,14 @@ export default function Login() {
               </div>
 
               <h2 className="text-gray-900 text-xl font-semibold mb-1">选择本次使用身份</h2>
-              <p className="text-gray-500 text-sm mb-6">
-                {previewAccount.availableIdentities.includes("staff")
-                  ? `当前账号已开通工作人员权限，本次可按任务需要选择 ${getIdentityLabel(previewAccount.primaryIdentity)} 或学员视角进入。`
-                  : "当前账号以学员身份为主，工作人员视角会显示为需审批开通。"}
-              </p>
+              {loginTextVisibility.identitySelectionHint && (
+                <p className="text-gray-500 text-sm mb-6">
+                  {previewAccount.availableIdentities.includes("staff")
+                    ? `当前账号已开通工作人员权限，本次可按任务需要选择 ${getIdentityLabel(previewAccount.primaryIdentity)} 或学员视角进入。`
+                    : "当前账号以学员身份为主，工作人员视角会显示为需审批开通。"}
+                </p>
+              )}
+
 
               <div className="space-y-3">
                 {identityOptions.map((option) => {
@@ -458,7 +497,10 @@ export default function Login() {
                             <div className="font-medium text-gray-900 text-sm">{option.title}</div>
                             <span className={`text-xs px-1.5 py-0.5 rounded-full ${option.badgeClass}`}>{option.badge}</span>
                           </div>
-                          <div className="text-xs text-gray-500 mt-1">{option.desc}</div>
+                          {(option.key !== "staff" || loginTextVisibility.staffOptionDescription) && (
+                            <div className="text-xs text-gray-500 mt-1">{option.desc}</div>
+                          )}
+
                           <div className="flex flex-wrap gap-1 mt-2">
                             {option.tags.map((tag) => (
                               <span key={tag} className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">
@@ -481,29 +523,82 @@ export default function Login() {
                 })}
               </div>
 
-              <div className="mt-4 rounded-xl bg-[#F8FAFC] border border-gray-200 p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock size={14} className="text-[#2F5FD0]" />
-                  <span className="text-xs font-medium text-gray-900">身份流转说明</span>
-                </div>
-                <div className="space-y-2">
-                  {flowSteps.map((stepLabel, index) => {
-                    const activeIndex = previewStatus === "approved" ? 3 : previewStatus === "pending" ? 2 : previewStatus === "rejected" ? 2 : 1;
-                    return (
-                      <div key={stepLabel} className="flex items-center gap-2 text-xs text-gray-600">
-                        <div
-                          className={`w-5 h-5 rounded-full flex items-center justify-center ${
-                            index <= activeIndex ? "bg-[#2F5FD0] text-white" : "bg-gray-100 text-gray-400"
+              {selectedIdentity === "student" && (
+                <div className="mt-4 rounded-xl border border-[#D9E5FF] bg-[#F7FAFF] p-3">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-900">选择学员学习身份</h3>
+                      {loginTextVisibility.learnerRoleHint && (
+                        <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                          首页和学习中心只显示所选身份的内容，其他身份课程不会删除，可在学习页搜索查看。
+                        </p>
+                      )}
+                    </div>
+                    {loginTextVisibility.learnerRoleCountBadge && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-[#2F5FD0] text-white">四选一</span>
+                    )}
+
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {learnerRoleKeys.map((roleKey) => {
+                      const role = learnerRoleProfiles[roleKey];
+                      const Icon = learnerRoleIcons[roleKey];
+                      const active = selectedLearnerRole === roleKey;
+                      return (
+                        <button
+                          key={roleKey}
+                          type="button"
+                          onClick={() => setSelectedLearnerRole(roleKey)}
+                          className={`rounded-xl border p-3 text-left transition-all ${
+                            active ? "border-[#2F5FD0] bg-white shadow-sm" : "border-gray-200 bg-white/70 hover:border-[#2F5FD0]/40"
                           }`}
                         >
-                          {index + 1}
-                        </div>
-                        <span>{stepLabel}</span>
-                      </div>
-                    );
-                  })}
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${active ? "bg-[#2F5FD0] text-white" : "bg-gray-100 text-gray-500"}`}>
+                              <Icon size={16} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-gray-900">{role.label}</p>
+                              <p className="text-xs text-gray-400">{role.shortLabel}</p>
+                            </div>
+                          </div>
+                          {loginTextVisibility.learnerRoleDescription && (
+                            <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{role.desc}</p>
+                          )}
+
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {loginTextVisibility.identityFlowSection && (
+                <div className="mt-4 rounded-xl bg-[#F8FAFC] border border-gray-200 p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock size={14} className="text-[#2F5FD0]" />
+                    <span className="text-xs font-medium text-gray-900">身份流转说明</span>
+                  </div>
+                  <div className="space-y-2">
+                    {flowSteps.map((stepLabel, index) => {
+                      const activeIndex = previewStatus === "approved" ? 3 : previewStatus === "pending" ? 2 : previewStatus === "rejected" ? 2 : 1;
+                      return (
+                        <div key={stepLabel} className="flex items-center gap-2 text-xs text-gray-600">
+                          <div
+                            className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                              index <= activeIndex ? "bg-[#2F5FD0] text-white" : "bg-gray-100 text-gray-400"
+                            }`}
+                          >
+                            {index + 1}
+                          </div>
+                          <span>{stepLabel}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
 
               <button
                 onClick={handleIdentityConfirm}
@@ -512,7 +607,11 @@ export default function Login() {
                   selectedIdentity ? "bg-[#2F5FD0] hover:bg-[#2550B8] text-white" : "bg-gray-100 text-gray-400 cursor-not-allowed"
                 }`}
               >
-                {selectedIdentity ? `确认，进入${getIdentityLabel(selectedIdentity)}视角` : "请选择本次使用身份"}
+                {selectedIdentity
+                  ? selectedIdentity === "student"
+                    ? `确认，进入${getLearnerRoleMeta(selectedLearnerRole).label}学习视角`
+                    : `确认，进入${getIdentityLabel(selectedIdentity)}视角`
+                  : "请选择本次使用身份"}
               </button>
             </div>
           )}

@@ -45,7 +45,23 @@ const identityActions = {
 
 const retainedLearningAbilities = ["学习中心", "历史课程", "考核记录", "成长档案", "补训任务"];
 
+const showIdentityPermissionSummary = false;
+const showPermissionBoundarySections = false;
+const showPermissionStatusCard = false;
+const showIdentityChangeCard = false;
+const showStatusSyncCard = false;
+const showLatestApplicationPanel = false;
+const showApplicationHistoryPanel = false;
+const showIdentityFlowPanel = false;
+const showLearningArchivePanel = false;
+const showStatusNextStepPanel = false;
+
+
 function getStatusBadgeClass(status: StaffApprovalStatus) {
+
+
+
+
   if (status === "approved") return "bg-green-100 text-[#15803D]";
   if (status === "pending") return "bg-amber-100 text-[#B45309]";
   if (status === "rejected") return "bg-red-100 text-[#DC2626]";
@@ -160,6 +176,24 @@ export default function Profile() {
     },
   ];
 
+  const visibleStatusFeedbackCards = statusFeedbackCards.filter((card) => {
+    if (card.title === "权限状态") {
+      return showPermissionStatusCard;
+    }
+
+    if (card.title === "身份变化说明") {
+      return showIdentityChangeCard;
+    }
+
+    if (card.title === "状态反馈同步") {
+      return showStatusSyncCard;
+    }
+
+    return true;
+  });
+
+
+
   const latestFlowNote = latestApplication
     ? latestApplication.status === "approved"
       ? "主身份已变更为工作人员；你仍可继续使用学员视角查看学习中心、历史课程、考核记录和成长数据。"
@@ -247,23 +281,26 @@ export default function Profile() {
               <span className="text-sm font-medium text-gray-900">身份与权限</span>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-2 mb-4">
-              <div className="rounded-xl bg-[#F5F7FA] px-3 py-3">
-                <p className="text-xs text-gray-400">当前视角</p>
-                <p className="text-sm font-medium text-gray-900 mt-1">{getIdentityLabel(currentIdentity)}</p>
-                <p className="text-xs text-gray-500 mt-1">只影响首页推荐、快捷入口和操作深度</p>
+            {showIdentityPermissionSummary && (
+              <div className="grid md:grid-cols-3 gap-2 mb-4">
+                <div className="rounded-xl bg-[#F5F7FA] px-3 py-3">
+                  <p className="text-xs text-gray-400">当前视角</p>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{getIdentityLabel(currentIdentity)}</p>
+                  <p className="text-xs text-gray-500 mt-1">只影响首页推荐、快捷入口和操作深度</p>
+                </div>
+                <div className="rounded-xl bg-[#F5F7FA] px-3 py-3">
+                  <p className="text-xs text-gray-400">主身份</p>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{getIdentityLabel(user.primaryIdentity)}</p>
+                  <p className="text-xs text-gray-500 mt-1">审批通过后自动变更，学习能力保留</p>
+                </div>
+                <div className="rounded-xl bg-[#F5F7FA] px-3 py-3">
+                  <p className="text-xs text-gray-400">工作人员权限</p>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{approvalMeta.label}</p>
+                  <p className="text-xs text-gray-500 mt-1">最近更新：{user.staffApprovalUpdatedAt}</p>
+                </div>
               </div>
-              <div className="rounded-xl bg-[#F5F7FA] px-3 py-3">
-                <p className="text-xs text-gray-400">主身份</p>
-                <p className="text-sm font-medium text-gray-900 mt-1">{getIdentityLabel(user.primaryIdentity)}</p>
-                <p className="text-xs text-gray-500 mt-1">审批通过后自动变更，学习能力保留</p>
-              </div>
-              <div className="rounded-xl bg-[#F5F7FA] px-3 py-3">
-                <p className="text-xs text-gray-400">工作人员权限</p>
-                <p className="text-sm font-medium text-gray-900 mt-1">{approvalMeta.label}</p>
-                <p className="text-xs text-gray-500 mt-1">最近更新：{user.staffApprovalUpdatedAt}</p>
-              </div>
-            </div>
+            )}
+
 
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -320,73 +357,81 @@ export default function Profile() {
               </button>
             </div>
 
-            <div className="mt-4 rounded-xl border border-gray-200 bg-[#F8FAFC] p-3">
-              <div className="flex items-center justify-between gap-3 flex-wrap mb-2">
-                <span className="text-xs font-medium text-gray-900">当前账号可使用能力</span>
-                <span className="text-xs px-1.5 py-0.5 rounded-full bg-green-100 text-[#15803D]">
-                  {user.permissions.length} 项已开通
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {user.permissions.map((permission) => (
-                  <span key={permission} className="text-xs px-2 py-1 rounded-full bg-white border border-gray-200 text-gray-600">
-                    {permission}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-4 grid md:grid-cols-3 gap-3">
-              {permissionBoundaryGroups.map((group) => (
-                <div key={group.title} className="rounded-xl border border-gray-200 p-3 bg-white">
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <p className="text-sm font-medium text-gray-900">{group.title}</p>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                      group.tone === "green"
-                        ? "bg-green-100 text-[#15803D]"
-                        : group.tone === "amber"
-                          ? "bg-amber-100 text-[#B45309]"
-                          : "bg-blue-100 text-[#2F5FD0]"
-                    }`}>
-                      {group.badge}
+            {showPermissionBoundarySections && (
+              <>
+                <div className="mt-4 rounded-xl border border-gray-200 bg-[#F8FAFC] p-3">
+                  <div className="flex items-center justify-between gap-3 flex-wrap mb-2">
+                    <span className="text-xs font-medium text-gray-900">当前账号可使用能力</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-green-100 text-[#15803D]">
+                      {user.permissions.length} 项已开通
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 leading-relaxed">{group.desc}</p>
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {group.items.map((item) => (
-                      <span key={item} className="text-xs px-2 py-1 rounded-full bg-[#F8FAFC] border border-gray-200 text-gray-600">
-                        {item}
+                  <div className="flex flex-wrap gap-1.5">
+                    {user.permissions.map((permission) => (
+                      <span key={permission} className="text-xs px-2 py-1 rounded-full bg-white border border-gray-200 text-gray-600">
+                        {permission}
                       </span>
                     ))}
                   </div>
                 </div>
+
+                <div className="mt-4 grid md:grid-cols-3 gap-3">
+                  {permissionBoundaryGroups.map((group) => (
+                    <div key={group.title} className="rounded-xl border border-gray-200 p-3 bg-white">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <p className="text-sm font-medium text-gray-900">{group.title}</p>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                          group.tone === "green"
+                            ? "bg-green-100 text-[#15803D]"
+                            : group.tone === "amber"
+                              ? "bg-amber-100 text-[#B45309]"
+                              : "bg-blue-100 text-[#2F5FD0]"
+                        }`}>
+                          {group.badge}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 leading-relaxed">{group.desc}</p>
+                      <div className="flex flex-wrap gap-1.5 mt-3">
+                        {group.items.map((item) => (
+                          <span key={item} className="text-xs px-2 py-1 rounded-full bg-[#F8FAFC] border border-gray-200 text-gray-600">
+                            {item}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+          </div>
+
+          {visibleStatusFeedbackCards.length > 0 && (
+            <div className="grid md:grid-cols-3 gap-4">
+              {visibleStatusFeedbackCards.map((card) => (
+                <ApprovalStatusCard
+                  key={card.title}
+                  title={card.title}
+                  value={card.value}
+                  description={card.desc}
+                  badgeText={card.badgeText}
+                  badgeClassName={card.badgeClass}
+                  action={{
+                    label: card.actionLabel,
+                    onClick: () => {
+                      if (card.title === "身份变化说明" && canSwitchStaff) {
+                        switchIdentity("staff");
+                      }
+                      navigate(card.actionPath);
+                    },
+                  }}
+                />
               ))}
             </div>
-          </div>
+          )}
 
-          <div className="grid md:grid-cols-3 gap-4">
-            {statusFeedbackCards.map((card) => (
-              <ApprovalStatusCard
-                key={card.title}
-                title={card.title}
-                value={card.value}
-                description={card.desc}
-                badgeText={card.badgeText}
-                badgeClassName={card.badgeClass}
-                action={{
-                  label: card.actionLabel,
-                  onClick: () => {
-                    if (card.title === "身份变化说明" && canSwitchStaff) {
-                      switchIdentity("staff");
-                    }
-                    navigate(card.actionPath);
-                  },
-                }}
-              />
-            ))}
-          </div>
 
-          {latestApplication && (
+          {showLatestApplicationPanel && latestApplication && (
             <div className="bg-white rounded-xl shadow-sm p-4">
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp size={15} className="text-[#2F5FD0]" />
@@ -432,167 +477,178 @@ export default function Profile() {
             </div>
           )}
 
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <History size={15} className="text-[#2F5FD0]" />
-              <span className="text-sm font-medium text-gray-900">历史申请追溯</span>
-              <span className="ml-auto text-xs px-1.5 py-0.5 rounded-full bg-[#EEF2FF] text-[#2F5FD0]">
-                {user.applicationRecords.length} 条记录
-              </span>
-            </div>
-            <div className="space-y-3">
-              {user.applicationRecords.map((record, index) => {
-                const recordMeta = getStaffApprovalStatusMeta(record.status);
 
-                return (
-                  <div key={record.id} className="rounded-xl border border-gray-200 p-3">
-                    <div className="flex items-start gap-3">
-                      <div className={`mt-0.5 flex h-7 w-7 items-center justify-center rounded-full ${
-                        record.status === "approved"
-                          ? "bg-green-100 text-[#15803D]"
-                          : record.status === "pending"
-                            ? "bg-amber-100 text-[#B45309]"
-                            : record.status === "rejected"
-                              ? "bg-red-100 text-[#DC2626]"
-                              : "bg-gray-100 text-gray-500"
-                      }`}>
-                        {index + 1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-3 flex-wrap">
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">{record.title}</p>
-                            <p className="text-xs text-gray-400 mt-1">提交于 {record.submittedAt}</p>
-                          </div>
-                          <span className={`text-xs px-1.5 py-0.5 rounded-full ${getStatusBadgeClass(record.status)}`}>
-                            {recordMeta.shortLabel}
-                          </span>
+          {showApplicationHistoryPanel && (
+            <div className="bg-white rounded-xl shadow-sm p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <History size={15} className="text-[#2F5FD0]" />
+                <span className="text-sm font-medium text-gray-900">历史申请追溯</span>
+                <span className="ml-auto text-xs px-1.5 py-0.5 rounded-full bg-[#EEF2FF] text-[#2F5FD0]">
+                  {user.applicationRecords.length} 条记录
+                </span>
+              </div>
+              <div className="space-y-3">
+                {user.applicationRecords.map((record, index) => {
+                  const recordMeta = getStaffApprovalStatusMeta(record.status);
+
+                  return (
+                    <div key={record.id} className="rounded-xl border border-gray-200 p-3">
+                      <div className="flex items-start gap-3">
+                        <div className={`mt-0.5 flex h-7 w-7 items-center justify-center rounded-full ${
+                          record.status === "approved"
+                            ? "bg-green-100 text-[#15803D]"
+                            : record.status === "pending"
+                              ? "bg-amber-100 text-[#B45309]"
+                              : record.status === "rejected"
+                                ? "bg-red-100 text-[#DC2626]"
+                                : "bg-gray-100 text-gray-500"
+                        }`}>
+                          {index + 1}
                         </div>
-                        <p className="text-sm text-gray-500 mt-2 leading-relaxed">{record.summary}</p>
-                        <div className="mt-3 grid md:grid-cols-3 gap-2">
-                          {[
-                            { label: "提交时间", value: record.submittedAt },
-                            { label: "处理时间", value: record.updatedAt },
-                            { label: "审批人", value: record.reviewer },
-                          ].map((item) => (
-                            <div key={item.label} className="rounded-lg bg-[#F5F7FA] px-3 py-2">
-                              <p className="text-xs text-gray-400">{item.label}</p>
-                              <p className="text-xs text-gray-700 mt-1">{item.value}</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-3 flex-wrap">
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">{record.title}</p>
+                              <p className="text-xs text-gray-400 mt-1">提交于 {record.submittedAt}</p>
                             </div>
-                          ))}
+                            <span className={`text-xs px-1.5 py-0.5 rounded-full ${getStatusBadgeClass(record.status)}`}>
+                              {recordMeta.shortLabel}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-500 mt-2 leading-relaxed">{record.summary}</p>
+                          <div className="mt-3 grid md:grid-cols-3 gap-2">
+                            {[
+                              { label: "提交时间", value: record.submittedAt },
+                              { label: "处理时间", value: record.updatedAt },
+                              { label: "审批人", value: record.reviewer },
+                            ].map((item) => (
+                              <div key={item.label} className="rounded-lg bg-[#F5F7FA] px-3 py-2">
+                                <p className="text-xs text-gray-400">{item.label}</p>
+                                <p className="text-xs text-gray-700 mt-1">{item.value}</p>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <ArrowRightLeft size={15} className="text-[#2F5FD0]" />
-              <span className="text-sm font-medium text-gray-900">身份变化说明</span>
+
+          {showIdentityFlowPanel && (
+            <div className="bg-white rounded-xl shadow-sm p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <ArrowRightLeft size={15} className="text-[#2F5FD0]" />
+                <span className="text-sm font-medium text-gray-900">身份变化说明</span>
+              </div>
+              <div className="grid md:grid-cols-2 gap-3">
+                {identityFlowSteps.map((step, index) => (
+                  <div key={step.title} className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#EEF2FF] text-xs font-medium text-[#2F5FD0]">
+                        {index + 1}
+                      </span>
+                      <p className="text-sm font-medium text-gray-900">{step.title}</p>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-2 leading-relaxed">{step.desc}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="grid md:grid-cols-2 gap-3">
-              {identityFlowSteps.map((step, index) => (
-                <div key={step.title} className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#EEF2FF] text-xs font-medium text-[#2F5FD0]">
-                      {index + 1}
+          )}
+
+          {showLearningArchivePanel && (
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <Award size={15} className="text-[#F59E0B]" />
+                  <span className="text-sm font-medium text-gray-900">学习档案与认证</span>
+                </div>
+              </div>
+              <div className="px-4 py-3 border-b border-gray-50 space-y-3">
+                <div>
+                  <p className="text-xs font-medium text-gray-900 mb-2">学习能力保留范围</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {identityActions.student.map((item) => (
+                      <span key={item} className="text-xs px-2 py-1 rounded-full bg-blue-50 text-[#2F5FD0]">
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-xl bg-[#F8FAFC] px-3 py-3 flex items-start gap-2">
+                  <LockKeyhole size={14} className="text-[#2F5FD0] mt-0.5" />
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    即使工作人员权限已开通，学习档案、历史考核记录、成长页和补训入口也仍然保留，不会因为主身份变化被清空。
+                  </p>
+                </div>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {certifications.map((cert) => (
+                  <div key={cert.name} className="px-4 py-3 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+                      <Award size={16} className="text-[#F59E0B]" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-800">{cert.name}</p>
+                      <p className="text-xs text-gray-400">{cert.date} · {cert.score} 分</p>
+                    </div>
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${cert.valid ? "bg-green-100 text-[#16A34A]" : "bg-gray-100 text-gray-500"}`}>
+                      {cert.valid ? "有效" : "失效"}
                     </span>
-                    <p className="text-sm font-medium text-gray-900">{step.title}</p>
                   </div>
-                  <p className="text-sm text-gray-500 mt-2 leading-relaxed">{step.desc}</p>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100">
-              <div className="flex items-center gap-2">
-                <Award size={15} className="text-[#F59E0B]" />
-                <span className="text-sm font-medium text-gray-900">学习档案与认证</span>
+          {showStatusNextStepPanel && (
+            <div className="bg-white rounded-xl shadow-sm p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles size={15} className="text-[#2F5FD0]" />
+                <span className="text-sm font-medium text-gray-900">状态反馈与下一步</span>
               </div>
-            </div>
-            <div className="px-4 py-3 border-b border-gray-50 space-y-3">
-              <div>
-                <p className="text-xs font-medium text-gray-900 mb-2">学习能力保留范围</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {identityActions.student.map((item) => (
-                    <span key={item} className="text-xs px-2 py-1 rounded-full bg-blue-50 text-[#2F5FD0]">
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="rounded-xl bg-[#F8FAFC] px-3 py-3 flex items-start gap-2">
-                <LockKeyhole size={14} className="text-[#2F5FD0] mt-0.5" />
-                <p className="text-xs text-gray-600 leading-relaxed">
-                  即使工作人员权限已开通，学习档案、历史考核记录、成长页和补训入口也仍然保留，不会因为主身份变化被清空。
-                </p>
-              </div>
-            </div>
-            <div className="divide-y divide-gray-50">
-              {certifications.map((cert) => (
-                <div key={cert.name} className="px-4 py-3 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
-                    <Award size={16} className="text-[#F59E0B]" />
+              <div className="grid md:grid-cols-3 gap-3">
+                {[
+                  {
+                    icon: <Clock size={15} className="text-[#2F5FD0]" />,
+                    title: "最近权限更新时间",
+                    value: user.staffApprovalUpdatedAt,
+                    desc: "权限变更后会同步更新到审批状态页与消息中心。",
+                  },
+                  {
+                    icon: <FileClock size={15} className="text-[#2F5FD0]" />,
+                    title: "最近申请结果",
+                    value: latestApplication ? getStaffApprovalStatusMeta(latestApplication.status).label : "暂无申请",
+                    desc: latestApplication ? latestApplication.summary : "当前还没有申请记录，可按条件发起申请。",
+                  },
+                  {
+                    icon: <Shield size={15} className="text-[#2F5FD0]" />,
+                    title: "建议下一步",
+                    value: user.staffApprovalStatus === "approved" ? "切到工作人员视角处理任务" : user.staffApprovalStatus === "pending" ? "跟进审批进度并留意消息" : "补齐条件后重新发起申请",
+                    desc: user.staffApprovalStatus === "approved"
+                      ? "当前已经可以回到工作台处理信息同步、协同和审单回流任务。"
+                      : user.staffApprovalStatus === "pending"
+                        ? "审批完成前仍以学员身份为主，建议先继续完成学习和补训事项。"
+                        : "可先去转工作人员申请页查看资格项和待补材料。",
+                  },
+                ].map((item) => (
+                  <div key={item.title} className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      {item.icon}
+                      <p className="text-sm font-medium text-gray-900">{item.title}</p>
+                    </div>
+                    <p className="text-sm font-medium text-gray-900 mt-3">{item.value}</p>
+                    <p className="text-xs text-gray-500 mt-1 leading-relaxed">{item.desc}</p>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-800">{cert.name}</p>
-                    <p className="text-xs text-gray-400">{cert.date} · {cert.score} 分</p>
-                  </div>
-                  <span className={`text-xs px-1.5 py-0.5 rounded ${cert.valid ? "bg-green-100 text-[#16A34A]" : "bg-gray-100 text-gray-500"}`}>
-                    {cert.valid ? "有效" : "失效"}
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles size={15} className="text-[#2F5FD0]" />
-              <span className="text-sm font-medium text-gray-900">状态反馈与下一步</span>
-            </div>
-            <div className="grid md:grid-cols-3 gap-3">
-              {[
-                {
-                  icon: <Clock size={15} className="text-[#2F5FD0]" />,
-                  title: "最近权限更新时间",
-                  value: user.staffApprovalUpdatedAt,
-                  desc: "权限变更后会同步更新到审批状态页与消息中心。",
-                },
-                {
-                  icon: <FileClock size={15} className="text-[#2F5FD0]" />,
-                  title: "最近申请结果",
-                  value: latestApplication ? getStaffApprovalStatusMeta(latestApplication.status).label : "暂无申请",
-                  desc: latestApplication ? latestApplication.summary : "当前还没有申请记录，可按条件发起申请。",
-                },
-                {
-                  icon: <Shield size={15} className="text-[#2F5FD0]" />,
-                  title: "建议下一步",
-                  value: user.staffApprovalStatus === "approved" ? "切到工作人员视角处理任务" : user.staffApprovalStatus === "pending" ? "跟进审批进度并留意消息" : "补齐条件后重新发起申请",
-                  desc: user.staffApprovalStatus === "approved"
-                    ? "当前已经可以回到工作台处理信息同步、协同和审单回流任务。"
-                    : user.staffApprovalStatus === "pending"
-                      ? "审批完成前仍以学员身份为主，建议先继续完成学习和补训事项。"
-                      : "可先去转工作人员申请页查看资格项和待补材料。",
-                },
-              ].map((item) => (
-                <div key={item.title} className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    {item.icon}
-                    <p className="text-sm font-medium text-gray-900">{item.title}</p>
-                  </div>
-                  <p className="text-sm font-medium text-gray-900 mt-3">{item.value}</p>
-                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
 
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             {actionEntries.map((item) => (

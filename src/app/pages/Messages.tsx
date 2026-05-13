@@ -78,7 +78,25 @@ function getNowLabel() {
   return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 }
 
+const showMessageOverviewStats = false;
+const showMessageRightPanel = false;
+const showMessageDetailPanel = false;
+const showMessageSourceChainPanel = false;
+const showMessageReceiptPanel = false;
+const showMessageSuggestedActionsPanel = false;
+
+const messageUsesSplitDesktopLayout = showMessageRightPanel;
+const messageDesktopContainerClass = messageUsesSplitDesktopLayout ? "max-w-6xl" : "max-w-[860px] xl:max-w-[980px]";
+const messageDesktopContentClass = messageUsesSplitDesktopLayout ? "grid xl:grid-cols-5 gap-4 items-start" : "space-y-2";
+const messageListClass = messageUsesSplitDesktopLayout ? "xl:col-span-2 space-y-2" : "space-y-2";
+
+
 export default function Messages() {
+
+
+
+
+
   const navigate = useNavigate();
   const [category, setCategory] = useState<MessageCategory | "all">("all");
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("all");
@@ -196,19 +214,22 @@ export default function Messages() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-4 grid-cols-2 gap-2 mb-4">
-            {[
-              { label: "全部消息", value: `${messages.length}`, tone: "text-gray-900", bg: "bg-gray-100" },
-              { label: "未读消息", value: `${unreadCount}`, tone: "text-[#DC2626]", bg: "bg-red-50" },
-              { label: "紧急处理", value: `${urgentCount}`, tone: "text-[#B45309]", bg: "bg-amber-50" },
-              { label: "待回执", value: `${pendingReceiptCount}`, tone: "text-[#2F5FD0]", bg: "bg-blue-50" },
-            ].map((item) => (
-              <div key={item.label} className={`rounded-xl px-3 py-3 ${item.bg}`}>
-                <div className={`text-lg font-semibold ${item.tone}`}>{item.value}</div>
-                <div className="text-xs text-gray-500">{item.label}</div>
-              </div>
-            ))}
-          </div>
+          {showMessageOverviewStats && (
+            <div className="grid md:grid-cols-4 grid-cols-2 gap-2 mb-4">
+              {[
+                { label: "全部消息", value: `${messages.length}`, tone: "text-gray-900", bg: "bg-gray-100" },
+                { label: "未读消息", value: `${unreadCount}`, tone: "text-[#DC2626]", bg: "bg-red-50" },
+                { label: "紧急处理", value: `${urgentCount}`, tone: "text-[#B45309]", bg: "bg-amber-50" },
+                { label: "待回执", value: `${pendingReceiptCount}`, tone: "text-[#2F5FD0]", bg: "bg-blue-50" },
+              ].map((item) => (
+                <div key={item.label} className={`rounded-xl px-3 py-3 ${item.bg}`}>
+                  <div className={`text-lg font-semibold ${item.tone}`}>{item.value}</div>
+                  <div className="text-xs text-gray-500">{item.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
 
           <div className="grid md:grid-cols-4 gap-2">
             {Object.entries(categoryMeta).map(([key, meta]) => {
@@ -302,10 +323,11 @@ export default function Messages() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-4">
+      <div className={`${messageDesktopContainerClass} mx-auto px-4 md:px-6 py-4`}>
         {filteredMessages.length > 0 ? (
-          <div className="grid xl:grid-cols-5 gap-4 items-start">
-            <div className="xl:col-span-2 space-y-2">
+          <div className={messageDesktopContentClass}>
+            <div className={messageListClass}>
+
               {filteredMessages.map((message) => {
                 const typeInfo = typeIconMap[message.type] || typeIconMap.sync;
                 const currentCategory = categoryMeta[message.category];
@@ -329,216 +351,242 @@ export default function Messages() {
                         </label>
                       )}
 
-                      <button onClick={() => openMessage(message.id)} className="flex-1 text-left min-w-0">
-                        <div className="flex items-start gap-3">
-                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${typeInfo.bg}`}>
-                            <span className={typeInfo.color}>{typeInfo.icon}</span>
-                          </div>
+                      <div className="flex-1 min-w-0">
+                        <button type="button" onClick={() => openMessage(message.id)} className="w-full text-left min-w-0">
+                          <div className="flex items-start gap-3">
+                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${typeInfo.bg}`}>
+                              <span className={typeInfo.color}>{typeInfo.icon}</span>
+                            </div>
 
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2 mb-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                {!currentRead && <div className="w-2 h-2 rounded-full bg-[#DC2626] flex-shrink-0" />}
-                                <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">{currentCategory.label}</span>
-                                {message.urgency === "urgent" && <span className="text-xs px-1.5 py-0.5 bg-red-100 text-[#DC2626] rounded">紧急</span>}
-                                <span className={`text-xs px-1.5 py-0.5 rounded ${receiptStatusTone(currentReceiptStatus)}`}>
-                                  {receiptStatusLabel(currentReceiptStatus)}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-2 mb-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {!currentRead && <div className="w-2 h-2 rounded-full bg-[#DC2626] flex-shrink-0" />}
+                                  <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">{currentCategory.label}</span>
+                                  {message.urgency === "urgent" && <span className="text-xs px-1.5 py-0.5 bg-red-100 text-[#DC2626] rounded">紧急</span>}
+                                  <span className={`text-xs px-1.5 py-0.5 rounded ${receiptStatusTone(currentReceiptStatus)}`}>
+                                    {receiptStatusLabel(currentReceiptStatus)}
+                                  </span>
+                                </div>
+                                <span className="flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
+                                  <Clock size={9} /> {message.time}
                                 </span>
                               </div>
-                              <span className="flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
-                                <Clock size={9} /> {message.time}
-                              </span>
-                            </div>
 
-                            <p className={`text-sm mb-1 line-clamp-2 ${currentRead ? "text-gray-600" : "text-gray-900"}`}>{message.title}</p>
-                            <p className="text-xs text-gray-400 leading-relaxed line-clamp-2">{message.body}</p>
-
-                            <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
-                              <div className="flex items-center gap-2 flex-wrap text-xs text-gray-400">
-                                <span>{message.sender}</span>
-                                <span>·</span>
-                                <span>{message.sourceBusiness}</span>
-                              </div>
-                              <span className={`text-xs ${currentRead ? "text-gray-400" : "text-[#2F5FD0]"}`}>{currentRead ? "已查看" : "待处理"}</span>
+                              <p className={`text-sm mb-1 line-clamp-2 ${currentRead ? "text-gray-600" : "text-gray-900"}`}>{message.title}</p>
+                              <p className="text-xs text-gray-400 leading-relaxed line-clamp-2">{message.body}</p>
                             </div>
                           </div>
+                        </button>
+
+                        <div className="mt-2 flex items-center justify-between gap-2 flex-wrap pl-12">
+                          <div className="flex items-center gap-2 flex-wrap text-xs text-gray-400">
+                            <span>{message.sender}</span>
+                            <span>·</span>
+                            <span>{message.sourceBusiness}</span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap justify-end text-xs">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                markRead(message.id);
+                                navigate(message.path);
+                              }}
+                              className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium text-white transition-colors ${message.urgency === "urgent" ? "bg-[#DC2626] hover:bg-red-700" : "bg-[#2F5FD0] hover:bg-[#2550B8]"}`}
+                            >
+                              {message.action}
+                            </button>
+                            <span className={currentRead ? "text-gray-400" : "text-[#2F5FD0]"}>{currentRead ? "已查看" : "待处理"}</span>
+                          </div>
                         </div>
-                      </button>
+                      </div>
+
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            <div className="xl:col-span-3">
-              {selectedMessage && (
-                <div className="space-y-4">
-                  <div className="bg-white rounded-xl shadow-sm p-4">
-                    <div className="flex items-start justify-between gap-3 flex-wrap">
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap mb-2">
-                          <span className="text-xs px-1.5 py-0.5 rounded bg-[#EEF4FF] text-[#2F5FD0]">{categoryMeta[selectedMessage.category].label}</span>
-                          {selectedMessage.urgency === "urgent" && <span className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-[#DC2626]">紧急</span>}
-                          <span className={`text-xs px-1.5 py-0.5 rounded ${receiptStatusTone(resolvedReceiptStatus(selectedMessage))}`}>
+            {showMessageRightPanel && (
+              <div className="xl:col-span-3">
+                {selectedMessage && (
+                  <div className="space-y-4">
+                    <div className="bg-white rounded-xl shadow-sm p-4">
+                      <div className="flex items-start justify-between gap-3 flex-wrap">
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap mb-2">
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-[#EEF4FF] text-[#2F5FD0]">{categoryMeta[selectedMessage.category].label}</span>
+                            {selectedMessage.urgency === "urgent" && <span className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-[#DC2626]">紧急</span>}
+                            <span className={`text-xs px-1.5 py-0.5 rounded ${receiptStatusTone(resolvedReceiptStatus(selectedMessage))}`}>
+                              {receiptStatusLabel(resolvedReceiptStatus(selectedMessage))}
+                            </span>
+                            <span className="text-xs text-gray-400">发送方：{selectedMessage.sender}</span>
+                          </div>
+                          <h2 className="text-base font-medium text-gray-900">{selectedMessage.title}</h2>
+                          <p className="text-sm text-gray-500 mt-1 leading-relaxed">{selectedMessage.summary}</p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <button
+                            onClick={() => handleSingleReceipt(selectedMessage)}
+                            className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600 hover:bg-gray-50 transition-colors"
+                          >
+                            记录处理结果
+                          </button>
+                          <button
+                            onClick={() => {
+                              markRead(selectedMessage.id);
+                              navigate(selectedMessage.path);
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-xs transition-colors ${selectedMessage.urgency === "urgent" ? "bg-[#DC2626] hover:bg-red-700 text-white" : "bg-[#2F5FD0] hover:bg-[#2550B8] text-white"}`}
+                          >
+                            {selectedMessage.action}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid md:grid-cols-3 gap-3 mt-4 text-xs">
+                        <div className="rounded-xl bg-[#F8FAFC] px-3 py-3">
+                          <p className="text-gray-400 mb-1">消息时间</p>
+                          <p className="text-gray-700">{selectedMessage.time}</p>
+                        </div>
+                        <div className="rounded-xl bg-[#F8FAFC] px-3 py-3">
+                          <p className="text-gray-400 mb-1">来源业务</p>
+                          <p className="text-gray-700">{selectedMessage.sourceBusiness}</p>
+                        </div>
+                        <div className="rounded-xl bg-[#F8FAFC] px-3 py-3">
+                          <p className="text-gray-400 mb-1">最近回执更新时间</p>
+                          <p className="text-gray-700">{resolvedReceiptTime(selectedMessage)}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {showMessageDetailPanel && (
+                      <div className="bg-white rounded-xl shadow-sm p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Bell size={15} className="text-[#2F5FD0]" />
+                          <span className="text-sm font-medium text-gray-900">消息详情态</span>
+                        </div>
+                        <div className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-3 py-3 text-sm text-gray-700 leading-relaxed mb-3">
+                          {selectedMessage.body}
+                        </div>
+                        <div className="space-y-2">
+                          {selectedMessage.detailPoints.map((item) => (
+                            <div key={item} className="rounded-xl border border-gray-200 bg-white px-3 py-3 text-xs text-gray-600 leading-relaxed">
+                              {item}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap mt-3">
+                          {selectedMessage.tags.map((tag) => (
+                            <span key={tag} className="text-xs px-2 py-1 rounded-full bg-[#F5F7FA] border border-gray-200 text-gray-600">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {showMessageSourceChainPanel && (
+                      <div className="bg-white rounded-xl shadow-sm p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <ArrowRight size={15} className="text-[#2F5FD0]" />
+                          <span className="text-sm font-medium text-gray-900">来源业务链路关联</span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap mb-4">
+                          {selectedMessage.sourceChain.map((item, index) => (
+                            <div key={`${selectedMessage.id}-${item}`} className="flex items-center gap-2">
+                              <span className="text-xs px-2 py-1 rounded-full bg-[#EEF4FF] text-[#2F5FD0]">{item}</span>
+                              {index < selectedMessage.sourceChain.length - 1 && <ChevronRight size={12} className="text-gray-300" />}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="grid md:grid-cols-3 gap-3">
+                          {selectedMessage.relatedLinks.map((link) => (
+                            <button
+                              key={`${selectedMessage.id}-${link.label}`}
+                              onClick={() => {
+                                markRead(selectedMessage.id);
+                                navigate(link.path);
+                              }}
+                              className={`rounded-xl border px-3 py-3 text-left transition-colors ${link.emphasis === "primary" ? "border-[#D9E5FF] bg-[linear-gradient(180deg,#F7FAFF_0%,#FFFFFF_100%)] hover:border-[#2F5FD0]/40" : "border-gray-200 bg-white hover:bg-gray-50"}`}
+                            >
+                              <div className="flex items-center justify-between gap-3">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">{link.label}</p>
+                                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">{link.desc}</p>
+                                </div>
+                                <ArrowRight size={14} className="text-gray-300 flex-shrink-0" />
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {showMessageReceiptPanel && (
+                      <div className="bg-white rounded-xl shadow-sm p-4">
+                        <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                          <div className="flex items-center gap-2">
+                            <ClipboardList size={15} className="text-[#2F5FD0]" />
+                            <span className="text-sm font-medium text-gray-900">处理回执</span>
+                          </div>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${receiptStatusTone(resolvedReceiptStatus(selectedMessage))}`}>
                             {receiptStatusLabel(resolvedReceiptStatus(selectedMessage))}
                           </span>
-                          <span className="text-xs text-gray-400">发送方：{selectedMessage.sender}</span>
                         </div>
-                        <h2 className="text-base font-medium text-gray-900">{selectedMessage.title}</h2>
-                        <p className="text-sm text-gray-500 mt-1 leading-relaxed">{selectedMessage.summary}</p>
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <button
-                          onClick={() => handleSingleReceipt(selectedMessage)}
-                          className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600 hover:bg-gray-50 transition-colors"
-                        >
-                          记录处理结果
-                        </button>
-                        <button
-                          onClick={() => {
-                            markRead(selectedMessage.id);
-                            navigate(selectedMessage.path);
-                          }}
-                          className={`px-3 py-1.5 rounded-lg text-xs transition-colors ${selectedMessage.urgency === "urgent" ? "bg-[#DC2626] hover:bg-red-700 text-white" : "bg-[#2F5FD0] hover:bg-[#2550B8] text-white"}`}
-                        >
-                          {selectedMessage.action}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-3 mt-4 text-xs">
-                      <div className="rounded-xl bg-[#F8FAFC] px-3 py-3">
-                        <p className="text-gray-400 mb-1">消息时间</p>
-                        <p className="text-gray-700">{selectedMessage.time}</p>
-                      </div>
-                      <div className="rounded-xl bg-[#F8FAFC] px-3 py-3">
-                        <p className="text-gray-400 mb-1">来源业务</p>
-                        <p className="text-gray-700">{selectedMessage.sourceBusiness}</p>
-                      </div>
-                      <div className="rounded-xl bg-[#F8FAFC] px-3 py-3">
-                        <p className="text-gray-400 mb-1">最近回执更新时间</p>
-                        <p className="text-gray-700">{resolvedReceiptTime(selectedMessage)}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-xl shadow-sm p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Bell size={15} className="text-[#2F5FD0]" />
-                      <span className="text-sm font-medium text-gray-900">消息详情态</span>
-                    </div>
-                    <div className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-3 py-3 text-sm text-gray-700 leading-relaxed mb-3">
-                      {selectedMessage.body}
-                    </div>
-                    <div className="space-y-2">
-                      {selectedMessage.detailPoints.map((item) => (
-                        <div key={item} className="rounded-xl border border-gray-200 bg-white px-3 py-3 text-xs text-gray-600 leading-relaxed">
-                          {item}
+                        <div className={`rounded-xl border px-3 py-3 text-xs leading-relaxed mb-3 ${receiptStatusTone(resolvedReceiptStatus(selectedMessage))}`}>
+                          回执编号：{selectedMessage.receipt.code} · 最近更新：{resolvedReceiptTime(selectedMessage)}
+                          <div className="mt-1">{selectedMessage.receipt.summary}</div>
                         </div>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap mt-3">
-                      {selectedMessage.tags.map((tag) => (
-                        <span key={tag} className="text-xs px-2 py-1 rounded-full bg-[#F5F7FA] border border-gray-200 text-gray-600">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-xl shadow-sm p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <ArrowRight size={15} className="text-[#2F5FD0]" />
-                      <span className="text-sm font-medium text-gray-900">来源业务链路关联</span>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap mb-4">
-                      {selectedMessage.sourceChain.map((item, index) => (
-                        <div key={`${selectedMessage.id}-${item}`} className="flex items-center gap-2">
-                          <span className="text-xs px-2 py-1 rounded-full bg-[#EEF4FF] text-[#2F5FD0]">{item}</span>
-                          {index < selectedMessage.sourceChain.length - 1 && <ChevronRight size={12} className="text-gray-300" />}
-                        </div>
-                      ))}
-                    </div>
-                    <div className="grid md:grid-cols-3 gap-3">
-                      {selectedMessage.relatedLinks.map((link) => (
-                        <button
-                          key={`${selectedMessage.id}-${link.label}`}
-                          onClick={() => {
-                            markRead(selectedMessage.id);
-                            navigate(link.path);
-                          }}
-                          className={`rounded-xl border px-3 py-3 text-left transition-colors ${link.emphasis === "primary" ? "border-[#D9E5FF] bg-[linear-gradient(180deg,#F7FAFF_0%,#FFFFFF_100%)] hover:border-[#2F5FD0]/40" : "border-gray-200 bg-white hover:bg-gray-50"}`}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">{link.label}</p>
-                              <p className="text-xs text-gray-500 mt-1 leading-relaxed">{link.desc}</p>
+                        <div className="space-y-2">
+                          {selectedMessage.receipt.items.map((item) => (
+                            <div key={`${selectedMessage.id}-${item.label}`} className={`rounded-xl border px-3 py-3 ${receiptItemTone(item.status)}`}>
+                              <div className="flex items-center justify-between gap-3 text-xs font-medium flex-wrap mb-2">
+                                <span>{item.label}</span>
+                                <span>{item.time}</span>
+                              </div>
+                              <p className="text-xs leading-relaxed">责任人：{item.owner}</p>
+                              <p className="text-xs mt-1 leading-relaxed">{item.note}</p>
                             </div>
-                            <ArrowRight size={14} className="text-gray-300 flex-shrink-0" />
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="bg-white rounded-xl shadow-sm p-4">
-                    <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
-                      <div className="flex items-center gap-2">
-                        <ClipboardList size={15} className="text-[#2F5FD0]" />
-                        <span className="text-sm font-medium text-gray-900">处理回执</span>
+                          ))}
+                        </div>
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${receiptStatusTone(resolvedReceiptStatus(selectedMessage))}`}>
-                        {receiptStatusLabel(resolvedReceiptStatus(selectedMessage))}
-                      </span>
-                    </div>
-                    <div className={`rounded-xl border px-3 py-3 text-xs leading-relaxed mb-3 ${receiptStatusTone(resolvedReceiptStatus(selectedMessage))}`}>
-                      回执编号：{selectedMessage.receipt.code} · 最近更新：{resolvedReceiptTime(selectedMessage)}
-                      <div className="mt-1">{selectedMessage.receipt.summary}</div>
-                    </div>
-                    <div className="space-y-2">
-                      {selectedMessage.receipt.items.map((item) => (
-                        <div key={`${selectedMessage.id}-${item.label}`} className={`rounded-xl border px-3 py-3 ${receiptItemTone(item.status)}`}>
-                          <div className="flex items-center justify-between gap-3 text-xs font-medium flex-wrap mb-2">
-                            <span>{item.label}</span>
-                            <span>{item.time}</span>
-                          </div>
-                          <p className="text-xs leading-relaxed">责任人：{item.owner}</p>
-                          <p className="text-xs mt-1 leading-relaxed">{item.note}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                    )}
 
-                  <div className="bg-white rounded-xl shadow-sm p-4">
-                    <p className="text-sm font-medium text-gray-900 mb-3">建议动作</p>
-                    <div className="space-y-2 mb-3">
-                      {selectedMessage.suggestedActions.map((item) => (
-                        <div key={item} className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-3 py-3 text-xs text-gray-600 leading-relaxed">
-                          {item}
+                    {showMessageSuggestedActionsPanel && (
+                      <div className="bg-white rounded-xl shadow-sm p-4">
+                        <p className="text-sm font-medium text-gray-900 mb-3">建议动作</p>
+                        <div className="space-y-2 mb-3">
+                          {selectedMessage.suggestedActions.map((item) => (
+                            <div key={item} className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-3 py-3 text-xs text-gray-600 leading-relaxed">
+                              {item}
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                      <button
-                        onClick={() => {
-                          markRead(selectedMessage.id);
-                          navigate(selectedMessage.path);
-                        }}
-                        className="flex-1 min-w-[180px] py-2.5 rounded-xl bg-[#2F5FD0] hover:bg-[#2550B8] text-white text-sm transition-colors"
-                      >
-                        进入来源业务处理
-                      </button>
-                      <button
-                        onClick={() => handleSingleReceipt(selectedMessage)}
-                        className="flex-1 min-w-[180px] py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm transition-colors"
-                      >
-                        回写处理回执
-                      </button>
-                    </div>
+                        <div className="flex gap-2 flex-wrap">
+                          <button
+                            onClick={() => {
+                              markRead(selectedMessage.id);
+                              navigate(selectedMessage.path);
+                            }}
+                            className="flex-1 min-w-[180px] py-2.5 rounded-xl bg-[#2F5FD0] hover:bg-[#2550B8] text-white text-sm transition-colors"
+                          >
+                            进入来源业务处理
+                          </button>
+                          <button
+                            onClick={() => handleSingleReceipt(selectedMessage)}
+                            className="flex-1 min-w-[180px] py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm transition-colors"
+                          >
+                            回写处理回执
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
+
           </div>
         ) : (
           <GlobalStateCard

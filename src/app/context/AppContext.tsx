@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
 export type Identity = "student" | "staff";
+export type LearnerRole = "sales" | "community_ops" | "ops_manager" | "designer";
 export type StaffApprovalStatus = "not_applied" | "pending" | "approved" | "rejected";
 
 export interface ApplicationRecord {
@@ -20,6 +21,7 @@ export interface User {
   avatar: string;
   role: string;
   department: string;
+  learnerRole: LearnerRole;
   identity: Identity;
   primaryIdentity: Identity;
   availableIdentities: Identity[];
@@ -38,6 +40,7 @@ interface AppContextType {
   login: (identity: Identity, userOverrides?: Partial<User>) => void;
   logout: () => void;
   switchIdentity: (identity: Identity) => void;
+  switchLearnerRole: (learnerRole: LearnerRole) => void;
   unreadMessages: number;
   pendingTasks: number;
 }
@@ -46,8 +49,9 @@ const defaultUser: User = {
   id: "u001",
   name: "张晓琳",
   avatar: "张",
-  role: "区域带教销售顾问",
+  role: "销售顾问",
   department: "华南区销售部",
+  learnerRole: "sales",
   identity: "student",
   primaryIdentity: "staff",
   availableIdentities: ["student", "staff"],
@@ -97,9 +101,51 @@ const AppContext = createContext<AppContextType>({
   login: () => {},
   logout: () => {},
   switchIdentity: () => {},
+  switchLearnerRole: () => {},
   unreadMessages: 0,
   pendingTasks: 0,
 });
+
+export const learnerRoleProfiles: Record<LearnerRole, {
+  label: string;
+  shortLabel: string;
+  roleTitle: string;
+  desc: string;
+  tags: string[];
+}> = {
+  sales: {
+    label: "销售顾问",
+    shortLabel: "销售",
+    roleTitle: "门店销售顾问",
+    desc: "优先学习新品参数、客户异议、价值话术和成交考核。",
+    tags: ["新品学习", "销售话术", "AI 陪练", "成交考核"],
+  },
+  community_ops: {
+    label: "社区运营",
+    shortLabel: "运营新人",
+    roleTitle: "社区运营新人",
+    desc: "优先学习岗位边界、资源开拓、社群 SOP 和过程指标。",
+    tags: ["岗位认知", "资源开拓", "社群 SOP", "指标判断"],
+  },
+  ops_manager: {
+    label: "运营管理者",
+    shortLabel: "运营管理",
+    roleTitle: "运营管理者",
+    desc: "优先学习指标看盘、风险识别、任务派发和转化复盘。",
+    tags: ["指标看盘", "风险识别", "任务派发", "复盘管理"],
+  },
+  designer: {
+    label: "设计师",
+    shortLabel: "设计",
+    roleTitle: "设计师新人",
+    desc: "优先学习设计规范、量尺出图、报价一致性和会审讲解。",
+    tags: ["设计规范", "量尺出图", "会审讲解", "审单自检"],
+  },
+};
+
+export function getLearnerRoleMeta(learnerRole?: LearnerRole) {
+  return learnerRoleProfiles[learnerRole || "sales"];
+}
 
 export function getIdentityLabel(identity: Identity) {
   return identity === "staff" ? "工作人员" : "学员";
@@ -144,6 +190,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ...defaultUser,
       ...userOverrides,
       availableIdentities: userOverrides.availableIdentities ?? defaultUser.availableIdentities,
+      learnerRole: userOverrides.learnerRole ?? defaultUser.learnerRole,
       permissions: userOverrides.permissions ?? defaultUser.permissions,
       applicationRecords: userOverrides.applicationRecords ?? defaultUser.applicationRecords,
     };
@@ -172,6 +219,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const switchLearnerRole = (learnerRole: LearnerRole) => {
+    setUser((prev) => (prev ? { ...prev, learnerRole, role: getLearnerRoleMeta(learnerRole).roleTitle } : prev));
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -181,6 +232,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         switchIdentity,
+        switchLearnerRole,
         unreadMessages: 5,
         pendingTasks: 4,
       }}

@@ -27,6 +27,7 @@ import {
 import {
   useApp,
   getIdentityLabel,
+  getLearnerRoleMeta,
   getStaffApprovalStatusMeta,
 } from "../context/AppContext";
 import { IdentityStatusBar, QuickActionGrid, TodayTaskCard } from "../components/BusinessBlocks";
@@ -116,6 +117,17 @@ const studentStateOptions: { key: StudentHomeState; label: string }[] = [
   { key: "empty", label: "无数据" },
   { key: "network", label: "网络异常" },
 ];
+
+const homeSectionVisibility = {
+  studentHeroDescription: false,
+  studentIdentityCard: false,
+  studentUpdatesPanel: false,
+  studentPermissionReminder: false,
+  studentGrowthReminder: false,
+  studentCurrentStatusReminder: false,
+} as const;
+
+
 
 const staffTasks = [
   {
@@ -281,18 +293,18 @@ const studentHomeStates: Record<StudentHomeState, StudentStateConfig> = {
   },
   first: {
     label: "首次进入",
-    heroTitle: "先从第一条任务开始",
-    heroDesc: "这是你第一次进入学员首页，系统先给你最短学习路径，不先塞复杂信息。",
+    heroTitle: "先把销售顾问起步任务跑起来",
+    heroDesc: "第一次进入先给你最短起步链路：产品基础 → 接待闭环 → 规则底线。",
     stats: [
-      { label: "今日任务", value: "1", sub: "条起步任务" },
-      { label: "学习阶段", value: "1/4", sub: "已解锁" },
+      { label: "起步任务", value: "2", sub: "条" },
+      { label: "学习阶段", value: "1/5", sub: "已解锁" },
       { label: "成长记录", value: "0", sub: "次训练" },
     ],
     focusCard: {
       tone: "bg-[#F7FAFF] border-[#D9E5FF]",
       title: "首次进入建议",
-      desc: "先看新人上岗路径和第一门必学课，完成后系统会继续给你下一步。",
-      actionLabel: "开始第一条任务",
+      desc: "先看销售顾问首周上岗任务包和第一门板材基础课，完成后系统会继续给你下一步。",
+      actionLabel: "开始起步任务",
       actionPath: "/learning",
     },
     taskTitle: "起步任务",
@@ -300,88 +312,90 @@ const studentHomeStates: Record<StudentHomeState, StudentStateConfig> = {
       {
         id: 1,
         type: "course",
-        title: "新人销售上岗 7 日路径 · 第 1 步",
-        desc: "先熟悉学习中心、AI 问答和今日任务的基本入口",
+        title: "销售顾问首周上岗任务包 · 第 1 步",
+        desc: "先熟悉学习中心、首页任务和接下来 5 步学习链路",
         urgency: "normal",
         deadline: "今天完成更好",
-        duration: "约 10 分钟",
+        duration: "约 8 分钟",
         progress: 0,
         path: "/learning",
       },
       {
         id: 2,
         type: "course",
-        title: "先看：云岚石暖冬系列新品基础介绍",
-        desc: "从最常用的新产品知识开始，避免一上来信息过多",
+        title: "先看：《板材基础知识与万骊板材体系》",
+        desc: "从客户最常问的板材、价格、环保三连问开始，不一上来塞太多信息",
         urgency: "normal",
         deadline: "本周内",
-        duration: "约 12 分钟",
+        duration: "约 28 分钟",
         progress: 0,
         path: "/learning/course/1",
       },
     ],
-    updates: [{ title: "新手指引已为你准备好", time: "刚刚", type: "system" }],
+    updates: [{ title: "销售顾问起步任务已为你准备好", time: "刚刚", type: "system" }],
     growthCard: {
       tone: "bg-[#F5F7FA]",
       title: "成长提醒：先开始，再看反馈",
-      desc: "首次进入时先建立节奏，成长分析会在你完成训练后逐步出现。",
+      desc: "先把起步链路跑起来，成长分析会在你完成课程、陪练和测验后逐步出现。",
       actionLabel: "去成长页看看结构",
       actionPath: "/learning/growth",
     },
   },
+
   "new-product": {
-    label: "有新品待看",
-    heroTitle: "今天先看新品更新",
-    heroDesc: "这类更新会直接影响门店推荐和客户解释，优先级高于普通练习。",
+    label: "有产品基础待补",
+    heroTitle: "先补产品基础再去接待",
+    heroDesc: "产品知识不稳时，先补板材和五金，再做需求挖掘和案例训练。",
     stats: [
-      { label: "新品待看", value: "1", sub: "门重点更新" },
-      { label: "影响场景", value: "3", sub: "类接待话题" },
-      { label: "重学建议", value: "今天", sub: "完成" },
+      { label: "待补课程", value: "2", sub: "门基础课" },
+      { label: "影响场景", value: "4", sub: "类接待话题" },
+      { label: "推荐动作", value: "先学后练", sub: "今天完成" },
     ],
     focusCard: {
       tone: "bg-blue-50 border-blue-100",
-      title: "有新品更新待查看",
-      desc: "暖冬系列参数和防滑信息已更新，今天接待前建议先补齐。",
-      actionLabel: "立即去看新品课",
+      title: "有产品基础待补",
+      desc: "板材和五金是销售顾问最常被客户追问的基础内容，建议今天接待前先补齐。",
+      actionLabel: "立即去看板材课",
       actionPath: "/learning/course/1",
     },
-    taskTitle: "新品相关任务",
+    taskTitle: "产品基础任务",
     tasks: [
       {
         id: 1,
         type: "course",
-        title: "【必学】暖冬系列新品参数更新",
-        desc: "新增 3 款规格、防滑等级更新、推荐场景变化",
+        title: "《板材基础知识与万骊板材体系》",
+        desc: "先把板材、价格、环保三连问讲顺，再去做接待训练",
         urgency: "urgent",
-        deadline: "今日截止",
-        duration: "约 20 分钟",
+        deadline: "今日优先",
+        duration: "约 28 分钟",
         progress: 0,
         path: "/learning/course/1",
       },
       {
         id: 2,
-        type: "practice",
-        title: "AI 陪练：新品怎么向客户介绍更清楚",
-        desc: "练习把参数差异讲成人话，不只会背数据",
+        type: "course",
+        title: "《衣柜基础五金（销售版）》",
+        desc: "学习 4 类五金和典型使用场景，避免只会背名称",
         urgency: "warning",
         deadline: "今天下班前",
-        duration: "约 10 分钟",
+        duration: "约 20 分钟",
         progress: 0,
-        path: "/learning/ai-practice",
+        path: "/learning/course/2",
       },
     ],
     updates: [
-      { title: "云岚石·暖冬系列新增 3 款规格", time: "2小时前", type: "product" },
-      { title: "新品对应的问答口径已同步", time: "1小时前", type: "qa" },
+      { title: "销售顾问首周上岗任务包已同步", time: "刚刚", type: "system" },
+      { title: "五金基础课已加入学习中心", time: "今天", type: "product" },
     ],
     growthCard: {
       tone: "bg-blue-50",
-      title: "成长提醒：新品知识会影响你近期得分",
-      desc: "这类内容通常会进入陪练和考核，越早补齐越不容易掉队。",
+      title: "成长提醒：产品知识会直接影响接待自信度",
+      desc: "板材和五金补齐后，需求挖掘和价值引导会更稳。",
       actionLabel: "去成长页看影响",
       actionPath: "/learning/growth",
     },
   },
+
   relearn: {
     label: "有课件待重学",
     heroTitle: "有课件更新待重学",
@@ -436,18 +450,18 @@ const studentHomeStates: Record<StudentHomeState, StudentStateConfig> = {
     },
   },
   retrain: {
-    label: "有补训任务",
-    heroTitle: "先把补训闭环走完",
-    heroDesc: "系统已经识别到薄弱项，当前优先级最高的是补学、补练和复测，不建议跳过。",
+    label: "有需求挖掘补训",
+    heroTitle: "先把需求挖掘补练完",
+    heroDesc: "系统识别到你当前最明显的短板是需求探寻和追问结构，先走完补训闭环。",
     stats: [
       { label: "补训任务", value: "3", sub: "项待完成" },
-      { label: "当前弱项", value: "2", sub: "个" },
-      { label: "复测目标", value: "85+", sub: "分" },
+      { label: "当前弱项", value: "1", sub: "个" },
+      { label: "复测目标", value: "80+", sub: "分" },
     ],
     focusCard: {
       tone: "bg-red-50 border-red-100",
-      title: "你有补训任务待完成",
-      desc: "工艺规范和审单流程是当前最明显的薄弱项，建议按系统顺序完成闭环。",
+      title: "你有需求挖掘补训待完成",
+      desc: "当前最明显的短板是追问不够深，建议按“复盘流程 → 重新陪练 → 再测验”顺序完成闭环。",
       actionLabel: "查看补训任务页",
       actionPath: "/learning/growth/retrain",
     },
@@ -456,78 +470,79 @@ const studentHomeStates: Record<StudentHomeState, StudentStateConfig> = {
       {
         id: 1,
         type: "growth",
-        title: "补学：防水施工规范 v3.1 关键变更",
-        desc: "先补新版本变化，再去复述和复测",
+        title: "补学：回看《销售接待闭环与云屏需求挖掘》重点节",
+        desc: "先复盘接待 6 环节和云屏需求挖掘的高权重追问点",
         urgency: "urgent",
         deadline: "今天 18:00 前",
         duration: "约 12 分钟",
-        progress: 0,
-        path: "/learning/growth/retrain",
+        progress: 35,
+        path: "/learning/course/3",
         ctaLabel: "去补训",
       },
       {
         id: 2,
         type: "practice",
-        title: "练习：施工说明口径复述 1 次",
-        desc: "把新规范说成客户能听懂的话，避免只会看课件",
+        title: "练习：完成 1 次云屏需求挖掘追问",
+        desc: "围绕户型、预算、重点空间和红线需求做完整追问，目标 80 分以上",
         urgency: "warning",
         deadline: "今天下班前",
-        duration: "约 8 分钟",
+        duration: "约 15 分钟",
         progress: 0,
         path: "/learning/ai-practice",
       },
       {
         id: 3,
         type: "exam",
-        title: "复测：防水施工规范 v3.1 专项测试",
-        desc: "复测通过线 85 分，通过后才算这一轮补训完成",
+        title: "复测：接待闭环与需求挖掘评分",
+        desc: "复测通过后，才算这一轮需求挖掘补训完成",
         urgency: "warning",
         deadline: "本周五",
-        duration: "约 25 分钟",
+        duration: "约 20 分钟",
         progress: 0,
         path: "/learning/assessment",
       },
     ],
     updates: [
-      { title: "系统已为你生成补训任务清单", time: "刚刚", type: "system" },
-      { title: "最近一次复测未通过，建议先补学后再考", time: "今天", type: "system" },
+      { title: "系统已为你生成需求挖掘补训清单", time: "刚刚", type: "system" },
+      { title: "最近一次陪练追问深度不足，建议先补学后再练", time: "今天", type: "system" },
     ],
     growthCard: {
       tone: "bg-red-50",
-      title: "成长提醒：别只看分数，要看哪里没补到位",
+      title: "成长提醒：别只看分数，要看需求有没有问透",
       desc: "薄弱项详情、补训任务和复评结果已经连成闭环，可以按页查看。",
       actionLabel: "查看薄弱项详情",
       actionPath: "/learning/growth/weak-area/craft-standard",
     },
   },
+
   completed: {
     label: "今日已完成",
     heroTitle: "今日任务已完成",
-    heroDesc: "今天的必做项已经清完了，你可以选择巩固练习，也可以先看成长反馈。",
+    heroDesc: "今天的必做项已经清完了，你可以选择继续看案例，也可以先看成长反馈。",
     stats: [
       { label: "今日任务", value: "0", sub: "项待完成" },
       { label: "完成情况", value: "100%", sub: "已收口" },
-      { label: "推荐动作", value: "可选", sub: "巩固练习" },
+      { label: "推荐动作", value: "可选", sub: "案例加练" },
     ],
     focusCard: {
       tone: "bg-green-50 border-green-100",
       title: "今日任务已完成",
-      desc: "如果还有余力，建议再练一次高频场景，拉开和基础线的差距。",
-      actionLabel: "做一次加练",
-      actionPath: "/learning/ai-practice",
+      desc: "如果还有余力，建议再看一个真实案例，把今天学的内容和业务场景接起来。",
+      actionLabel: "去看案例课",
+      actionPath: "/learning/course/12",
     },
     taskTitle: "可选加练",
     tasks: [
       {
         id: 1,
-        type: "practice",
-        title: "可选：再练一次高频价值引导场景",
-        desc: "不是必做项，用来把今天刚学的内容讲得更顺",
+        type: "course",
+        title: "可选：补看《售后客诉 6 小时危机公关复盘》",
+        desc: "不是必做项，用来把今天的规则和沟通动作带进真实高压场景",
         urgency: "normal",
         deadline: "今天任意时间",
-        duration: "约 10 分钟",
+        duration: "约 18 分钟",
         progress: 0,
-        path: "/learning/ai-practice",
+        path: "/learning/course/12",
       },
     ],
     updates: [{ title: "今日学习任务已全部完成", time: "刚刚", type: "system" }],
@@ -539,6 +554,7 @@ const studentHomeStates: Record<StudentHomeState, StudentStateConfig> = {
       actionPath: "/learning/growth/review-result",
     },
   },
+
   empty: {
     label: "无数据",
     heroTitle: "当前暂无学习数据",
@@ -584,22 +600,22 @@ const studentHomeStates: Record<StudentHomeState, StudentStateConfig> = {
     focusCard: {
       tone: "bg-red-50 border-red-100",
       title: "当前网络异常",
-      desc: "如果你正在接待客户，建议先查看本地缓存的课程或已保存话术，恢复后再同步最新内容。",
+      desc: "如果你正在接待客户，建议先查看本地缓存的板材基础课或已保存话术，恢复后再同步最新内容。",
       actionLabel: "先去看已缓存课程",
-      actionPath: "/learning/course/2",
+      actionPath: "/learning/course/1",
     },
     taskTitle: "缓存任务提醒",
     tasks: [
       {
         id: 1,
         type: "course",
-        title: "缓存可用：防水施工规范 v3.1 关键变更",
+        title: "缓存可用：《板材基础知识与万骊板材体系》",
         desc: "这门课程可先离线查看关键页，网络恢复后再同步完整记录",
         urgency: "warning",
         deadline: "恢复后记得同步",
         duration: "约 8 分钟",
-        progress: 45,
-        path: "/learning/course/2",
+        progress: 20,
+        path: "/learning/course/1",
       },
     ],
     updates: [{ title: "网络异常，最新通知未完全拉取", time: "刚刚", type: "system" }],
@@ -616,32 +632,163 @@ const studentHomeStates: Record<StudentHomeState, StudentStateConfig> = {
       actionLabel: "重新连接",
     },
   },
+
 };
+
+const learnerRoleHomeStates = {
+  sales: studentHomeStates.normal,
+  community_ops: {
+    ...studentHomeStates.normal,
+    label: "社区运营",
+    heroTitle: "今天先推进社区运营学习闭环",
+    heroDesc: "你当前选择的是社区运营身份，首页只展示岗位边界、资源开拓、社群 SOP 和指标相关任务。",
+    stats: [
+      { label: "今日任务", value: "3", sub: "项运营课" },
+      { label: "路径进度", value: "1/6", sub: "步" },
+      { label: "资源任务", value: "2", sub: "项待练" },
+    ],
+    focusCard: {
+      tone: "bg-[#F7FAFF] border-[#D9E5FF]",
+      title: "当前身份：社区运营",
+      desc: "先补齐岗位边界，再进入资源开拓 SOP 和社群推进训练。",
+      actionLabel: "去社区运营路径",
+      actionPath: "/learning/course/6",
+    },
+    taskTitle: "社区运营学习任务",
+    tasks: [
+      { id: 1, type: "course" as const, title: "社区运营岗位认知与协作边界", desc: "先明确和销售、门店、设计、工厂、售后的协作边界", urgency: "urgent" as const, deadline: "今日优先", duration: "约 22 分钟", progress: 50, path: "/learning/course/6" },
+      { id: 2, type: "course" as const, title: "新小区资源开拓 SOP 与资源缺口判断", desc: "学习新小区识别、资源盘点和门店缺口判断", urgency: "urgent" as const, deadline: "明日截止", duration: "约 28 分钟", progress: 0, path: "/learning/course/7" },
+      { id: 3, type: "practice" as const, title: "AI 陪练：门店资源不足时如何推动补资源", desc: "把资源缺口拆成可派发、可跟进、可回执的动作", urgency: "warning" as const, deadline: "本周内", duration: "约 15 分钟", progress: 0, path: "/learning/ai-practice" },
+    ],
+    updates: [
+      { title: "社区运营新人路径上线", time: "刚刚", type: "system" as const },
+      { title: "资源开拓 SOP 已加入学习中心", time: "今天", type: "system" as const },
+    ],
+    growthCard: {
+      tone: "bg-[#F5F7FA]",
+      title: "成长提醒：先稳住岗位边界",
+      desc: "运营新人最容易卡在跨角色边界不清，先完成入口课再做陪练。",
+      actionLabel: "查看成长总览",
+      actionPath: "/learning/growth",
+    },
+  },
+  ops_manager: {
+    ...studentHomeStates.normal,
+    label: "运营管理者",
+    heroTitle: "今天先看指标和风险",
+    heroDesc: "你当前选择的是运营管理者身份，首页只展示指标看盘、风险识别、任务派发和复盘任务。",
+    stats: [
+      { label: "看盘任务", value: "2", sub: "项" },
+      { label: "风险口径", value: "4", sub: "类" },
+      { label: "复盘任务", value: "1", sub: "项" },
+    ],
+    focusCard: {
+      tone: "bg-[#F7FAFF] border-[#D9E5FF]",
+      title: "当前身份：运营管理者",
+      desc: "先学习过程指标判断，再进入风险名单、任务派发和转化复盘。",
+      actionLabel: "去看盘路径",
+      actionPath: "/learning/course/9",
+    },
+    taskTitle: "运营管理学习任务",
+    tasks: [
+      { id: 1, type: "course" as const, title: "添加微信、QC、样板间与签单指标判断", desc: "统一过程指标口径，识别异常并转成动作", urgency: "warning" as const, deadline: "本周五", duration: "约 26 分钟", progress: 0, path: "/learning/course/9" },
+      { id: 2, type: "course" as const, title: "样板间推进、活动转化与运营复盘方法", desc: "围绕转化效果形成复盘和案例沉淀方法", urgency: "normal" as const, deadline: "本月底", duration: "约 30 分钟", progress: 0, path: "/learning/course/10" },
+    ],
+    updates: [
+      { title: "运营过程指标口径同步", time: "今天", type: "system" as const },
+      { title: "样板间与签单目标判断已更新", time: "今天", type: "spec" as const },
+    ],
+    growthCard: {
+      tone: "bg-[#F5F7FA]",
+      title: "成长提醒：指标要能转成动作",
+      desc: "管理者路径不只看数据，要把异常拆成任务、催办和复盘。",
+      actionLabel: "查看成长总览",
+      actionPath: "/learning/growth",
+    },
+  },
+  designer: {
+    ...studentHomeStates.normal,
+    label: "设计师",
+    heroTitle: "今天先完成设计规范训练",
+    heroDesc: "你当前选择的是设计师身份，首页只展示设计规范、量尺出图、报价一致性和会审讲解任务。",
+    stats: [
+      { label: "今日任务", value: "3", sub: "项设计课" },
+      { label: "路径进度", value: "0/6", sub: "步" },
+      { label: "防错清单", value: "5", sub: "项" },
+    ],
+    focusCard: {
+      tone: "bg-[#F7FAFF] border-[#D9E5FF]",
+      title: "当前身份：设计师",
+      desc: "先学规范作业，再进入量尺、出图、报价一致性和会审讲解训练。",
+      actionLabel: "去设计师路径",
+      actionPath: "/learning/course/11",
+    },
+    taskTitle: "设计师学习任务",
+    tasks: [
+      { id: 1, type: "course" as const, title: "设计师新人规范作业与防错训练", desc: "把量尺、出图、报价一致性和审单前自检串起来", urgency: "urgent" as const, deadline: "今日优先", duration: "约 26 分钟", progress: 0, path: "/learning/course/11" },
+      { id: 2, type: "course" as const, title: "防水产品施工规范 v3.1", desc: "设计沟通和施工说明需要同步新版规范", urgency: "warning" as const, deadline: "3 天后", duration: "约 18 分钟", progress: 45, path: "/learning/course/2" },
+      { id: 3, type: "practice" as const, title: "AI 陪练：会审时如何讲清方案", desc: "练习把客户需求、图纸表达和销售口径对齐", urgency: "warning" as const, deadline: "本周内", duration: "约 15 分钟", progress: 0, path: "/learning/ai-practice" },
+    ],
+    updates: [
+      { title: "设计师新人路径上线", time: "刚刚", type: "system" as const },
+      { title: "设计规范与防错训练专题已开放", time: "今天", type: "spec" as const },
+    ],
+    growthCard: {
+      tone: "bg-[#F5F7FA]",
+      title: "成长提醒：先减少返工风险",
+      desc: "设计师路径优先把图纸、报价、工艺和会审口径对齐。",
+      actionLabel: "查看成长总览",
+      actionPath: "/learning/growth",
+    },
+  },
+} satisfies Record<string, StudentStateConfig>;
 
 export default function Home() {
   const { user, currentIdentity } = useApp();
   const navigate = useNavigate();
   const isStaff = currentIdentity === "staff";
   const [studentHomeState, setStudentHomeState] = useState<StudentHomeState>("normal");
+  const selectedLearnerRole = user?.learnerRole ?? "sales";
+  const learnerRoleMeta = getLearnerRoleMeta(selectedLearnerRole);
   const today = new Date().toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "long" });
   const approvalMeta = user ? getStaffApprovalStatusMeta(user.staffApprovalStatus) : null;
-  const currentStudentState = useMemo(() => studentHomeStates[studentHomeState], [studentHomeState]);
+  const currentStudentState = useMemo(
+    () => (studentHomeState === "normal" ? learnerRoleHomeStates[selectedLearnerRole] : studentHomeStates[studentHomeState]),
+    [selectedLearnerRole, studentHomeState]
+  );
+  const showStaffActionBoard = false;
+  const showStaffUpdatesPanel = false;
+  const showStaffLoopEntry = false;
+  const showStaffTeamStatus = false;
+  const showStudentRightSidebar = homeSectionVisibility.studentUpdatesPanel || homeSectionVisibility.studentPermissionReminder;
+  const showStaffRightSidebar = showStaffUpdatesPanel || showStaffLoopEntry || showStaffTeamStatus;
+  const showHomeRightSidebar = isStaff ? showStaffRightSidebar : showStudentRightSidebar;
+
+  const homeDesktopContainerClass = showHomeRightSidebar ? "max-w-6xl" : "max-w-6xl xl:max-w-[1240px]";
+  const homeDesktopGridClass = showHomeRightSidebar ? "grid md:grid-cols-3 gap-4" : "grid gap-4";
+  const homePrimaryColumnClass = showHomeRightSidebar ? "md:col-span-2 space-y-4" : "space-y-4";
 
   return (
+
+
     <div className="min-h-full bg-[#F5F7FA]">
       <div className={`${isStaff ? "bg-[#1E2A3A]" : "bg-[#2F5FD0]"} px-4 md:px-6 pt-4 pb-10`}>
-        <div className="max-w-5xl mx-auto">
+        <div className={`${homeDesktopContainerClass} mx-auto`}>
+
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-white/70 text-sm mb-1">{today}</p>
               <h1 className="text-white text-xl font-semibold">
                 {isStaff ? `${user?.name}，今天先处理风险和待办` : `${user?.name}，${currentStudentState.heroTitle}`}
               </h1>
-              <p className="text-white/80 text-sm mt-2 leading-relaxed">
-                {isStaff
-                  ? `工作人员视角 · 主身份${user ? getIdentityLabel(user.primaryIdentity) : "工作人员"} · 首页先给动作，不先给图表`
-                  : `学员视角 · 主身份${user ? getIdentityLabel(user.primaryIdentity) : "学员"} · ${currentStudentState.heroDesc}`}
-              </p>
+              {(isStaff || homeSectionVisibility.studentHeroDescription) && (
+                <p className="text-white/80 text-sm mt-2 leading-relaxed">
+                  {isStaff
+                    ? `工作人员视角 · 主身份${user ? getIdentityLabel(user.primaryIdentity) : "工作人员"} · 首页先给动作，不先给图表`
+                    : `学员视角 · 当前学习身份：${learnerRoleMeta.label} · ${currentStudentState.heroDesc}`}
+                </p>
+              )}
+
             </div>
             <button
               onClick={() => navigate("/messages")}
@@ -684,9 +831,10 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 md:px-6 -mt-5">
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="md:col-span-2 space-y-4">
+      <div className={`${homeDesktopContainerClass} mx-auto px-4 md:px-6 -mt-5`}>
+        <div className={homeDesktopGridClass}>
+          <div className={homePrimaryColumnClass}>
+
             <div className="bg-white rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between mb-3 gap-3">
                 <div className="flex items-center gap-2">
@@ -707,26 +855,27 @@ export default function Home() {
 
             {!isStaff ? (
               <>
-                <div className="bg-white rounded-xl p-4 shadow-sm">
-                  <div className="flex items-center gap-2 mb-3 flex-wrap">
-                    <Target size={16} className="text-[#2F5FD0]" />
-                    <span className="text-base font-medium text-gray-900">首页关键状态</span>
-                    <span className="text-sm text-gray-400">当前查看：{currentStudentState.label}</span>
+                {homeSectionVisibility.studentIdentityCard && (
+                  <div className="bg-white rounded-xl p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-3 flex-wrap">
+                      <Target size={16} className="text-[#2F5FD0]" />
+                      <span className="text-base font-medium text-gray-900">当前学习身份</span>
+                      <span className="text-sm text-gray-400">只显示：{learnerRoleMeta.label}</span>
+                    </div>
+                    <div className="rounded-xl bg-[#F7FAFF] border border-[#D9E5FF] p-3">
+                      <p className="text-sm font-medium text-gray-900">{learnerRoleMeta.roleTitle}</p>
+                      <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">{learnerRoleMeta.desc}</p>
+                      <div className="flex flex-wrap gap-1.5 mt-3">
+                        {learnerRoleMeta.tags.map((tag) => (
+                          <span key={tag} className="text-xs px-2 py-1 rounded-full bg-white border border-blue-100 text-[#2F5FD0]">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {studentStateOptions.map((item) => (
-                      <button
-                        key={item.key}
-                        onClick={() => setStudentHomeState(item.key)}
-                        className={`px-3 py-1.5 rounded-lg text-xs transition-colors ${
-                          studentHomeState === item.key ? "bg-[#2F5FD0] text-white" : "bg-[#F5F7FA] text-gray-600 hover:bg-gray-200"
-                        }`}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                )}
+
 
                 {currentStudentState.networkTip && (
                   <GlobalStateCard
@@ -744,52 +893,57 @@ export default function Home() {
                   />
                 )}
 
+                {homeSectionVisibility.studentCurrentStatusReminder && (
+                  <div className="bg-white rounded-xl p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-3 flex-wrap">
+                      <Target size={16} className="text-[#2F5FD0]" />
+                      <span className="text-base font-medium text-gray-900">当前状态提醒</span>
+                      <span className="text-sm text-gray-400">任务优先，而不是展示优先</span>
+                    </div>
+                    <GlobalStateCard
+                      tone={getStudentFocusTone(studentHomeState)}
+                      size="sm"
+                      badge={currentStudentState.label}
+                      title={currentStudentState.focusCard.title}
+                      description={currentStudentState.focusCard.desc}
+                      action={{
+                        label: currentStudentState.focusCard.actionLabel,
+                        onClick: () => navigate(currentStudentState.focusCard.actionPath),
+                      }}
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              showStaffActionBoard && (
                 <div className="bg-white rounded-xl p-4 shadow-sm">
                   <div className="flex items-center gap-2 mb-3 flex-wrap">
                     <Target size={16} className="text-[#2F5FD0]" />
-                    <span className="text-base font-medium text-gray-900">当前状态提醒</span>
-                    <span className="text-sm text-gray-400">任务优先，而不是展示优先</span>
+                    <span className="text-base font-medium text-gray-900">今日动作面板</span>
+                    <span className="text-sm text-gray-400">先给动作，再给数据</span>
                   </div>
-                  <GlobalStateCard
-                    tone={getStudentFocusTone(studentHomeState)}
-                    size="sm"
-                    badge={currentStudentState.label}
-                    title={currentStudentState.focusCard.title}
-                    description={currentStudentState.focusCard.desc}
-                    action={{
-                      label: currentStudentState.focusCard.actionLabel,
-                      onClick: () => navigate(currentStudentState.focusCard.actionPath),
-                    }}
-                  />
+                  <div className="grid md:grid-cols-3 gap-3">
+                    {staffActionBoard.map((item) => (
+                      <button
+                        key={item.title}
+                        onClick={() => navigate(item.path)}
+                        className={`rounded-xl border p-3.5 text-left hover:shadow-sm transition-all ${item.tone}`}
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          {item.icon}
+                          <span className="text-base font-medium text-gray-900">{item.title}</span>
+                        </div>
+                        <p className="text-sm text-gray-600 leading-relaxed min-h-[60px]">{item.desc}</p>
+                        <div className="text-sm text-[#2F5FD0] mt-3 flex items-center gap-1">
+                          {item.action} <ChevronRight size={12} />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </>
-            ) : (
-              <div className="bg-white rounded-xl p-4 shadow-sm">
-                <div className="flex items-center gap-2 mb-3 flex-wrap">
-                  <Target size={16} className="text-[#2F5FD0]" />
-                  <span className="text-base font-medium text-gray-900">今日动作面板</span>
-                  <span className="text-sm text-gray-400">先给动作，再给数据</span>
-                </div>
-                <div className="grid md:grid-cols-3 gap-3">
-                  {staffActionBoard.map((item) => (
-                    <button
-                      key={item.title}
-                      onClick={() => navigate(item.path)}
-                      className={`rounded-xl border p-3.5 text-left hover:shadow-sm transition-all ${item.tone}`}
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        {item.icon}
-                        <span className="text-base font-medium text-gray-900">{item.title}</span>
-                      </div>
-                      <p className="text-sm text-gray-600 leading-relaxed min-h-[60px]">{item.desc}</p>
-                      <div className="text-sm text-[#2F5FD0] mt-3 flex items-center gap-1">
-                        {item.action} <ChevronRight size={12} />
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              )
             )}
+
 
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
@@ -853,7 +1007,7 @@ export default function Home() {
               </div>
             </div>
 
-            {!isStaff && (
+            {!isStaff && homeSectionVisibility.studentGrowthReminder && (
               <div className="bg-white rounded-xl p-4 shadow-sm">
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
                   <TrendingUp size={16} className="text-[#16A34A]" />
@@ -872,161 +1026,181 @@ export default function Home() {
                 </button>
               </div>
             )}
+
           </div>
 
-          <div className="space-y-4">
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
-                <Zap size={14} className="text-[#F59E0B]" />
-                <span className="text-sm font-medium text-gray-900">重要更新</span>
-              </div>
-              <div className="divide-y divide-gray-50">
-                {(isStaff ? [
-                  { title: "云岚石·暖冬系列防滑参数更新", time: "2小时前", type: "product" as UpdateType },
-                  { title: "防水施工规范 v3.1 发布", time: "昨天", type: "spec" as UpdateType },
-                  { title: "客户异议处理话术库新增 5 条", time: "2天前", type: "qa" as UpdateType },
-                ] : currentStudentState.updates).length > 0 ? (
-                  (isStaff
-                    ? [
-                        { title: "云岚石·暖冬系列防滑参数更新", time: "2小时前", type: "product" as UpdateType },
-                        { title: "防水施工规范 v3.1 发布", time: "昨天", type: "spec" as UpdateType },
-                        { title: "客户异议处理话术库新增 5 条", time: "2天前", type: "qa" as UpdateType },
-                      ]
-                    : currentStudentState.updates
-                  ).map((update, i) => (
-                    <button
-                      key={`${update.title}-${i}`}
-                      type="button"
-                      onClick={() => navigate(isStaff ? "/workbench/info-sync" : "/messages")}
-                      className="w-full px-4 py-3.5 text-left hover:bg-gray-50 transition-colors"
-                    >
-                      <p className="text-sm text-gray-800 line-clamp-2 leading-relaxed">{update.title}</p>
-                      <div className="flex items-center gap-2 mt-1.5">
-                        <span className={`text-xs px-1.5 py-0.5 rounded ${getUpdateBadge(update.type)}`}>
-                          {update.type === "product" ? "新品" : update.type === "spec" ? "规范" : update.type === "qa" ? "话术" : "系统"}
-                        </span>
-                        <span className="text-xs text-gray-400">{update.time}</span>
+          {showHomeRightSidebar && (
+            <div className="space-y-4">
+              {((isStaff && showStaffUpdatesPanel) || (!isStaff && homeSectionVisibility.studentUpdatesPanel)) && (
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+
+                <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+                  <Zap size={14} className="text-[#F59E0B]" />
+                  <span className="text-sm font-medium text-gray-900">重要更新</span>
+                </div>
+                <div className="divide-y divide-gray-50">
+                  {(isStaff ? [
+                    { title: "云岚石·暖冬系列防滑参数更新", time: "2小时前", type: "product" as UpdateType },
+                    { title: "防水施工规范 v3.1 发布", time: "昨天", type: "spec" as UpdateType },
+                    { title: "客户异议处理话术库新增 5 条", time: "2天前", type: "qa" as UpdateType },
+                  ] : currentStudentState.updates).length > 0 ? (
+                    (isStaff
+                      ? [
+                          { title: "云岚石·暖冬系列防滑参数更新", time: "2小时前", type: "product" as UpdateType },
+                          { title: "防水施工规范 v3.1 发布", time: "昨天", type: "spec" as UpdateType },
+                          { title: "客户异议处理话术库新增 5 条", time: "2天前", type: "qa" as UpdateType },
+                        ]
+                      : currentStudentState.updates
+                    ).map((update, i) => (
+                      <button
+                        key={`${update.title}-${i}`}
+                        type="button"
+                        onClick={() => navigate(isStaff ? "/workbench/info-sync" : "/messages")}
+                        className="w-full px-4 py-3.5 text-left hover:bg-gray-50 transition-colors"
+                      >
+                        <p className="text-sm text-gray-800 line-clamp-2 leading-relaxed">{update.title}</p>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span className={`text-xs px-1.5 py-0.5 rounded ${getUpdateBadge(update.type)}`}>
+                            {update.type === "product" ? "新品" : update.type === "spec" ? "规范" : update.type === "qa" ? "话术" : "系统"}
+                          </span>
+                          <span className="text-xs text-gray-400">{update.time}</span>
+                        </div>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-8 text-center">
+                      <div className="w-10 h-10 rounded-2xl bg-[#F5F7FA] mx-auto flex items-center justify-center mb-3">
+                        <Zap size={16} className="text-gray-400" />
                       </div>
-                    </button>
-                  ))
-                ) : (
-                  <div className="px-4 py-8 text-center">
-                    <div className="w-10 h-10 rounded-2xl bg-[#F5F7FA] mx-auto flex items-center justify-center mb-3">
-                      <Zap size={16} className="text-gray-400" />
+                      <p className="text-sm font-medium text-gray-900">暂无重要更新</p>
+                      <p className="text-xs text-gray-500 mt-1">当前没有新品、规范或系统提醒。</p>
                     </div>
-                    <p className="text-sm font-medium text-gray-900">暂无重要更新</p>
-                    <p className="text-xs text-gray-500 mt-1">当前没有新品、规范或系统提醒。</p>
-                  </div>
-                )}
+                  )}
+                </div>
+                <button
+                  onClick={() => navigate(isStaff ? "/workbench/info-sync" : "/messages")}
+                  className="w-full px-4 py-2.5 text-xs text-[#2F5FD0] hover:bg-gray-50 flex items-center justify-center gap-1 border-t border-gray-100"
+                >
+                  查看全部更新 <ChevronRight size={12} />
+                </button>
               </div>
-              <button
-                onClick={() => navigate(isStaff ? "/workbench/info-sync" : "/messages")}
-                className="w-full px-4 py-2.5 text-xs text-[#2F5FD0] hover:bg-gray-50 flex items-center justify-center gap-1 border-t border-gray-100"
-              >
-                查看全部更新 <ChevronRight size={12} />
-              </button>
-            </div>
+            )}
+
+
 
             {isStaff ? (
               <>
-                <div className="bg-white rounded-xl p-4 shadow-sm">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Users size={14} className="text-[#2F5FD0]" />
-                    <span className="text-sm font-medium text-gray-900">团队本周状态</span>
-                  </div>
-                  {[
-                    { name: "李明", status: "风险", detail: "3天未学习", color: "text-[#DC2626]", bg: "bg-red-50" },
-                    { name: "王芳", status: "预警", detail: "考核得分下降", color: "text-[#F59E0B]", bg: "bg-amber-50" },
-                    { name: "陈伟", status: "正常", detail: "完成率 90%", color: "text-[#16A34A]", bg: "bg-green-50" },
-                  ].map((member, i) => (
-                    <div key={i} className="flex items-center gap-2 mb-2">
-                      <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-600">{member.name[0]}</div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm text-gray-700">{member.name}</span>
-                        <span className="text-sm text-gray-400 ml-2">{member.detail}</span>
-                      </div>
-                      <span className={`text-xs px-1.5 py-0.5 rounded ${member.bg} ${member.color}`}>{member.status}</span>
+                {showStaffTeamStatus && (
+                  <div className="bg-white rounded-xl p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Users size={14} className="text-[#2F5FD0]" />
+                      <span className="text-sm font-medium text-gray-900">团队本周状态</span>
                     </div>
-                  ))}
-                  <button
-                    onClick={() => navigate("/workbench/dashboard")}
-                    className="w-full mt-2 text-xs text-[#2F5FD0] hover:text-[#2550B8] flex items-center justify-center gap-1"
-                  >
-                    查看带教看板 <ChevronRight size={12} />
-                  </button>
-                </div>
+                    {[
+                      { name: "李明", status: "风险", detail: "3天未学习", color: "text-[#DC2626]", bg: "bg-red-50" },
+                      { name: "王芳", status: "预警", detail: "考核得分下降", color: "text-[#F59E0B]", bg: "bg-amber-50" },
+                      { name: "陈伟", status: "正常", detail: "完成率 90%", color: "text-[#16A34A]", bg: "bg-green-50" },
+                    ].map((member, i) => (
+                      <div key={i} className="flex items-center gap-2 mb-2">
+                        <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-600">{member.name[0]}</div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm text-gray-700">{member.name}</span>
+                          <span className="text-sm text-gray-400 ml-2">{member.detail}</span>
+                        </div>
+                        <span className={`text-xs px-1.5 py-0.5 rounded ${member.bg} ${member.color}`}>{member.status}</span>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => navigate("/workbench/dashboard")}
+                      className="w-full mt-2 text-xs text-[#2F5FD0] hover:text-[#2550B8] flex items-center justify-center gap-1"
+                    >
+                      查看带教看板 <ChevronRight size={12} />
+                    </button>
+                  </div>
+                )}
+
+                {showStaffLoopEntry && (
+
+                  <div className="bg-white rounded-xl p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-3">
+                      <CheckCircle2 size={14} className="text-[#16A34A]" />
+                      <span className="text-base font-medium text-gray-900">补学与闭环入口</span>
+                    </div>
+                    <div className="space-y-2">
+                      {[
+                        { title: "补训任务待发起", desc: "6 人未完成新品课，建议先推送重学" },
+                        { title: "售后问题待回流", desc: "2 条高频问题尚未沉淀到培训标准" },
+                        { title: "审批事项待确认", desc: "1 条身份/权限申请待处理" },
+                      ].map((item) => (
+                        <div key={item.title} className="rounded-lg bg-[#F5F7FA] p-3.5">
+                          <p className="text-sm font-medium text-gray-800">{item.title}</p>
+                          <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">{item.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              </>
+            ) : (
+              homeSectionVisibility.studentPermissionReminder && (
 
                 <div className="bg-white rounded-xl p-4 shadow-sm">
                   <div className="flex items-center gap-2 mb-3">
-                    <CheckCircle2 size={14} className="text-[#16A34A]" />
-                    <span className="text-base font-medium text-gray-900">补学与闭环入口</span>
+                    <Shield size={14} className="text-[#2F5FD0]" />
+                    <span className="text-base font-medium text-gray-900">身份与权限提醒</span>
                   </div>
-                  <div className="space-y-2">
-                    {[
-                      { title: "补训任务待发起", desc: "6 人未完成新品课，建议先推送重学" },
-                      { title: "售后问题待回流", desc: "2 条高频问题尚未沉淀到培训标准" },
-                      { title: "审批事项待确认", desc: "1 条身份/权限申请待处理" },
-                    ].map((item) => (
-                      <div key={item.title} className="rounded-lg bg-[#F5F7FA] p-3.5">
-                        <p className="text-sm font-medium text-gray-800">{item.title}</p>
-                        <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">{item.desc}</p>
-                      </div>
-                    ))}
+                  <div className="space-y-3">
+                    <IdentityStatusBar
+                      title="同一账号内保留双端能力"
+                      description="当前只是切到学员视角做学习与训练，工作人员模块没有消失；工作相关入口会弱化保留在工作台和“我的”里。"
+                      statusLabel={approvalMeta?.label || "待审批"}
+                      statusBadgeClassName={getApprovalStatusToneClass(user?.staffApprovalStatus)}
+                      items={[
+                        {
+                          label: "当前视角",
+                          value: user ? getIdentityLabel(user.identity) : "学员",
+                          helper: "影响首页推荐和快捷入口",
+                        },
+                        {
+                          label: "主身份",
+                          value: user ? getIdentityLabel(user.primaryIdentity) : "-",
+                          helper: "账号层面的正式归属",
+                        },
+                        {
+                          label: "工作人员权限",
+                          value: approvalMeta?.label || "待审批",
+                          helper: user?.staffApprovalUpdatedAt ? `最近更新：${user.staffApprovalUpdatedAt}` : "去“我的”查看申请进度",
+                        },
+                      ]}
+                      highlights={[
+                        "学习档案已保留",
+                        user?.staffApprovalStatus === "approved" ? "可随时切回工作人员" : "工作人员权限待审批",
+                        user?.staffApprovalStatus === "approved" ? "审批结果已生效" : "可在“我的”发起申请",
+                        "两类模块共用同一账号",
+                      ]}
+                      action={{
+                        label: user?.staffApprovalStatus === "approved" ? "查看审批状态" : "去发起申请",
+                        onClick: () => navigate(user?.staffApprovalStatus === "approved" ? "/profile/approval-status" : "/profile/staff-transfer"),
+                      }}
+                    />
+                    <button
+                      onClick={() => navigate("/workbench")}
+                      className="w-full text-sm rounded-lg border border-brand text-brand py-2 hover:bg-brand-soft transition-colors"
+                    >
+                      去轻量工作台
+                    </button>
                   </div>
                 </div>
-              </>
-            ) : (
-              <div className="bg-white rounded-xl p-4 shadow-sm">
-                <div className="flex items-center gap-2 mb-3">
-                  <Shield size={14} className="text-[#2F5FD0]" />
-                  <span className="text-base font-medium text-gray-900">身份与权限提醒</span>
-                </div>
-                <div className="space-y-3">
-                  <IdentityStatusBar
-                    title="同一账号内保留双端能力"
-                    description="当前只是切到学员视角做学习与训练，工作人员模块没有消失；工作相关入口会弱化保留在工作台和“我的”里。"
-                    statusLabel={approvalMeta?.label || "待审批"}
-                    statusBadgeClassName={getApprovalStatusToneClass(user?.staffApprovalStatus)}
-                    items={[
-                      {
-                        label: "当前视角",
-                        value: user ? getIdentityLabel(user.identity) : "学员",
-                        helper: "影响首页推荐和快捷入口",
-                      },
-                      {
-                        label: "主身份",
-                        value: user ? getIdentityLabel(user.primaryIdentity) : "-",
-                        helper: "账号层面的正式归属",
-                      },
-                      {
-                        label: "工作人员权限",
-                        value: approvalMeta?.label || "待审批",
-                        helper: user?.staffApprovalUpdatedAt ? `最近更新：${user.staffApprovalUpdatedAt}` : "去“我的”查看申请进度",
-                      },
-                    ]}
-                    highlights={[
-                      "学习档案已保留",
-                      user?.staffApprovalStatus === "approved" ? "可随时切回工作人员" : "工作人员权限待审批",
-                      user?.staffApprovalStatus === "approved" ? "审批结果已生效" : "可在“我的”发起申请",
-                      "两类模块共用同一账号",
-                    ]}
-                    action={{
-                      label: user?.staffApprovalStatus === "approved" ? "查看审批状态" : "去发起申请",
-                      onClick: () => navigate(user?.staffApprovalStatus === "approved" ? "/profile/approval-status" : "/profile/staff-transfer"),
-                    }}
-                  />
-                  <button
-                    onClick={() => navigate("/workbench")}
-                    className="w-full text-sm rounded-lg border border-brand text-brand py-2 hover:bg-brand-soft transition-colors"
-                  >
-                    去轻量工作台
-                  </button>
-                </div>
-              </div>
+              )
+
             )}
-          </div>
+
+            </div>
+          )}
         </div>
       </div>
+
     </div>
   );
 }

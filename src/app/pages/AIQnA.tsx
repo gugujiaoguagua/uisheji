@@ -13,13 +13,22 @@ import {
   ThumbsUp,
   Zap,
 } from "lucide-react";
+import type { LearnerRole } from "../context/AppContext";
+import { getLearnerRoleMeta, useApp } from "../context/AppContext";
+import { queryKnowledgeBase, submitKnowledgeFeedback } from "../lib/kbClient";
+
 
 interface Source {
+  id?: string;
   title: string;
   version: string;
   section: string;
   reliability: "high" | "medium";
+  sourceId?: string;
+  sourceFile?: string;
+  kbRevision?: string;
 }
+
 
 interface KnowledgeGap {
   title: string;
@@ -43,73 +52,111 @@ interface Message {
   knowledgeGap?: KnowledgeGap;
 }
 
-const suggestedQuestions = [
-  "这款瓷砖防滑系数是多少？适合卫浴吗？",
-  "云岚石暖冬系列和普通陶瓷砖有什么区别？",
-  "客户问为什么瓷砖价格比别家贵很多怎么回答？",
-  "防水施工时哪些材料是禁止使用的？",
-  "客户问海外项目能不能承诺 10 年质保？",
-];
-
-const supportedResponse = {
-  direct:
-    "这款云岚石暖冬系列防滑系数为 R10 级别，完全适合家庭卫浴场景使用。您可以直接告知客户：‘这款砖已达到卫浴专用防滑标准，干湿区均可铺贴，比 R9 更安全。’",
-  full:
-    "R10 防滑级别是当前住宅卫浴区的推荐标准。具体来说：\n\n**防滑系数说明：**\n• R9：适用于室内干区、客厅\n• R10（本产品）：适用于卫浴、厨房、阳台\n• R11：工业或商业重度场景\n\n**推荐话术：**\n‘这款云岚石暖冬系列防滑系数达到 R10，是专门适配家庭卫浴的规格。比很多普通瓷砖的 R9 高一个级别，特别适合老人和小孩的家庭。’\n\n**注意：** v2.3 版本将防滑系数从 R9 升级为 R10，若客户在其他渠道了解到旧参数，需主动告知已升级。",
-  sources: [
-    { title: "云岚石暖冬系列产品参数手册", version: "v2.3", section: "第 3 章·防滑系数与应用场景", reliability: "high" as const },
-    { title: "陶瓷砖吸水率与应用场景匹配指南", version: "v2.0", section: "防滑等级分类", reliability: "high" as const },
+const suggestedQuestionsByRole: Record<LearnerRole, string[]> = {
+  sales: [
+    "板材怎么向客户解释环保等级？",
+    "客户问万骊板材为什么贵怎么回答？",
+    "全屋定制估价有哪些核心计价项？",
+    "智柚下单时文件命名有什么要求？",
+  ],
+  community_ops: [
+    "小红书私域转化怎么维护业主群？",
+    "门店会议制度怎么落地？",
+    "渠道管理标准化有哪些关键动作？",
+    "智柚系统下单流程怎么给新人讲？",
+  ],
+  ops_manager: [
+    "门店会议制度怎么检查执行？",
+    "渠道管理标准化有哪些关键动作？",
+    "小红书运营数据应该复盘哪些环节？",
+    "智柚系统下单风险怎么做培训回流？",
+  ],
+  designer: [
+    "全屋估价空间报价怎么拆？",
+    "三维家导报价怎么操作？",
+    "衣柜类三维家下单有哪些注意事项？",
+    "设计师会审前资料要检查什么？",
   ],
 };
 
-const gapKeywords = [/质保/, /海外/, /出口/, /安装费/, /补贴/, /物流/, /保修/, /承诺/];
 
-function createKnowledgeGap(question: string): KnowledgeGap {
+function createKnowledgeGap(question: string, reason?: string): KnowledgeGap {
   return {
     title: "知识缺口待补充",
-    reason: `当前问题“${question}”缺少最新统一口径，现有资料不足以支持直接对客户承诺。`,
-    missingItems: ["最新政策版本", "适用范围与限制条件", "可直接对外复述的话术"],
+    reason: reason || `当前问题“${question}”缺少正式知识库依据，现有资料不足以支持直接对客户承诺。`,
+    missingItems: ["正式知识条目", "适用范围与限制条件", "可直接对外复述的话术"],
     suggestedOwner: "信息同步中心",
     suggestedSync: "补齐后同步到题库、陪练场景与消息通知",
     priority: "high",
   };
 }
 
-function buildResponse(question: string) {
-  const isGap = gapKeywords.some((pattern) => pattern.test(question));
+async function buildResponse(question: string, learnerRole: LearnerRole) {
+  try {
+    const result = await queryKnowledgeBase({
+      question,
+      role_hint: learnerRole,
+      top_k: 5,
+    });
 
-  if (isGap) {
-    const knowledgeGap = createKnowledgeGap(question);
+    if (result.fallback || result.citations.length === 0) {
+      const knowledgeGap = createKnowledgeGap(question, result.answer);
+      return {
+        direct: result.direct_answer,
+        full: `${result.answer}\n\n**处理建议：**已按“无依据不回答”策略拦截，可发起知识补充或转人工复核。`,
+        sources: undefined,
+        answerState: "needs-review" as const,
+
+        knowledgeGap,
+      };
+    }
 
     return {
-      direct:
-        "这个问题目前没有可直接对客户承诺的标准答案，建议先不要口头确认具体政策。你可以先这样回复客户：‘这个问题我先帮您核实一下，稍后把准确口径回给您。’",
-      full:
-        "当前知识库能检索到的资料不足以支持直接作答，主要缺少最新政策版本、适用范围和统一对外话术。\n\n**当前判断：**\n• 只能确认存在相关历史资料\n• 不能确认最新是否仍然有效\n• 不建议直接向客户承诺具体年限、金额或区域政策\n\n**建议动作：**\n先发起知识补充，由信息同步中心确认最新口径，再同步到培训题库、陪练场景和消息通知。",
-      sources: [
-        { title: "售后政策 FAQ", version: "v1.4", section: "历史售后条款", reliability: "medium" as const },
-      ],
+      direct: result.direct_answer,
+      full: `${result.answer}\n\n追踪号：${result.trace_id} · 知识库快照：${result.kb_snapshot_id}`,
+      sources: result.citations.map((item) => ({
+        id: item.id,
+        title: item.title,
+        version: item.version || "未标注版本",
+        section: item.source_section || item.relative_path || "正式知识库条目",
+        reliability: result.confidence === "high" ? "high" as const : "medium" as const,
+        sourceId: item.source_id,
+        sourceFile: item.source_file,
+        kbRevision: item.kb_revision,
+      })),
+      answerState: result.confidence === "low" ? "needs-review" as const : "resolved" as const,
+      knowledgeGap: undefined,
+    };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "知识库服务暂不可用";
+    const knowledgeGap = createKnowledgeGap(question, reason);
+    return {
+      direct: "知识库服务暂时不可用，我先不编造答案。请稍后重试或转人工复核。",
+      full: `当前无法连接正式知识库接口：${reason}\n\n**处理建议：**检查本地预览服务是否已重启，并确认知识库目录可访问。`,
+      sources: undefined,
       answerState: "needs-review" as const,
+
       knowledgeGap,
     };
   }
-
-  return {
-    direct: supportedResponse.direct,
-    full: supportedResponse.full,
-    sources: supportedResponse.sources,
-    answerState: "resolved" as const,
-    knowledgeGap: undefined,
-  };
 }
+
 
 export default function AIQnA() {
   const navigate = useNavigate();
+  const { user, currentIdentity } = useApp();
+  const selectedLearnerRole = user?.learnerRole ?? "sales";
+  const learnerRoleMeta = getLearnerRoleMeta(selectedLearnerRole);
+  const suggestedQuestions = currentIdentity === "student" ? suggestedQuestionsByRole[selectedLearnerRole] : suggestedQuestionsByRole.sales;
+  const showHeaderHelperText = false;
+  const headerHelperText = "先给对客户说的话，再给来源依据；推荐问题跟随当前学习身份";
   const [messages, setMessages] = useState<Message[]>([
+
     {
       id: "welcome",
       role: "assistant",
-      content: "你好！我是云训 AI 助手。你可以直接问我产品参数、工艺规范、销售话术等问题，我会先给你能直接对客户说的话，再给你背后的来源依据；如果当前答不上来，也会给你发起知识补充的入口。",
+      content: "你好！我是智柚 AI 助手。你可以直接问我产品参数、工艺规范、销售话术、报价和下单流程等问题，我会先检索正式知识库，再给你可追溯的答案；如果当前答不上来，也会给你发起知识补充的入口。",
+
       timestamp: new Date(),
     },
   ]);
@@ -139,22 +186,25 @@ export default function AIQnA() {
     setInputValue("");
     setIsLoading(true);
 
-    setTimeout(() => {
-      const response = buildResponse(q);
-      const aiMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: response.full,
-        question: q,
-        directAnswer: response.direct,
-        sources: response.sources,
-        answerState: response.answerState,
-        knowledgeGap: response.knowledgeGap,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-      setIsLoading(false);
-    }, 1200);
+    void buildResponse(q, selectedLearnerRole)
+      .then((response) => {
+        const aiMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: response.full,
+          question: q,
+          directAnswer: response.direct,
+          sources: response.sources,
+          answerState: response.answerState,
+          knowledgeGap: response.knowledgeGap,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, aiMsg]);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+
   };
 
   const toggleSources = (msgId: string) => {
@@ -172,9 +222,16 @@ export default function AIQnA() {
   };
 
   const handleSubmitGap = (msgId: string) => {
+    const targetMessage = messages.find((msg) => msg.id === msgId);
+    void submitKnowledgeFeedback({
+      question: targetMessage?.question || "",
+      fallback_reason: targetMessage?.knowledgeGap?.reason || "用户主动提交知识补充",
+      scene: currentIdentity === "student" ? learnerRoleMeta.label : "工作人员",
+    }).catch(() => undefined);
     setSubmittedGapIds((prev) => (prev.includes(msgId) ? prev : [...prev, msgId]));
     setActiveGapMessageId(null);
   };
+
 
   const activeGapMessage = messages.find((msg) => msg.id === activeGapMessageId && msg.role === "assistant");
   const activeGap = activeGapMessage?.knowledgeGap ??
@@ -188,12 +245,17 @@ export default function AIQnA() {
             <img src="/APP.png" alt="AI Avatar" className="w-full h-full object-cover scale-[1.25]" />
           </div>
           <div>
-            <h1 className="text-sm font-semibold text-gray-900">AI 问答</h1>
-            <p className="text-xs text-gray-500">先给对客户说的话，再给来源依据；答不上来就发起知识补充</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-sm font-semibold text-gray-900">AI 问答</h1>
+              {currentIdentity === "student" && <span className="text-xs px-2 py-0.5 rounded-full bg-[#EAF1FF] text-[#2F5FD0]">{learnerRoleMeta.label}</span>}
+            </div>
+            {showHeaderHelperText && <p className="text-xs text-gray-500">{headerHelperText}</p>}
+
           </div>
           <div className="ml-auto flex items-center gap-1.5 text-xs text-[#16A34A] bg-green-50 px-2 py-1 rounded-full">
             <div className="w-1.5 h-1.5 rounded-full bg-[#16A34A]" />
-            知识库实时同步
+            正式知识库已接入
+
           </div>
         </div>
       </div>
@@ -292,11 +354,17 @@ export default function AIQnA() {
                                       {source.reliability === "high" ? "高可信" : "参考"}
                                     </span>
                                     <div>
-                                      <p className="text-xs text-gray-700">{source.title}</p>
+                                      <p className="text-xs text-gray-700">{source.id ? `${source.id} · ` : ""}{source.title}</p>
                                       <p className="text-xs text-gray-400 mt-0.5">
-                                        {source.version} · {source.section}
+                                        {source.version}{source.kbRevision ? ` · ${source.kbRevision}` : ""} · {source.section}
                                       </p>
+                                      {(source.sourceId || source.sourceFile) && (
+                                        <p className="text-xs text-gray-400 mt-0.5">
+                                          {source.sourceId || "未标注来源ID"} · {source.sourceFile || "未标注来源文件"}
+                                        </p>
+                                      )}
                                     </div>
+
                                   </div>
                                 </div>
                               ))}

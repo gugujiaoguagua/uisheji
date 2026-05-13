@@ -36,20 +36,37 @@ import {
   trendData,
   weakAreas,
 } from "../data/growthData";
+import { getLearnerRoleMeta, useApp } from "../context/AppContext";
 
 export default function Growth() {
   const navigate = useNavigate();
+  const { user, currentIdentity } = useApp();
+  const learnerRoleMeta = getLearnerRoleMeta(user?.learnerRole);
   const previewTasks = useMemo(() => retrainTasks.slice(0, 3), []);
   const latestReview = reviewResults[0];
+  const showGrowthHeaderHint = false;
+  const growthHeaderHint = "看清当前学习身份差在哪、补什么，而不只是看分数";
+  const showCurrentStageCard = false;
+  const showRetrainTasksSection = false;
+  const showStrengthsSection = false;
+  const showTrendSection = false;
+  const showLatestReviewSection = false;
+  const showQuickActionsSection = false;
+
 
   return (
+
     <div className="min-h-full bg-[#F5F7FA]">
       <div className="bg-white border-b border-gray-200 px-4 md:px-6 pt-4 pb-4">
         <div className="max-w-5xl mx-auto">
-          <h1 className="text-gray-900 mb-0.5">成长总览</h1>
-          <p className="text-xs text-gray-500">看清自己差在哪、补什么，而不只是看分数</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-gray-900 mb-0.5">成长总览</h1>
+            {currentIdentity === "student" && <span className="text-xs px-2 py-0.5 rounded-full bg-[#EAF1FF] text-[#2F5FD0]">{learnerRoleMeta.label}</span>}
+          </div>
+          {showGrowthHeaderHint && <p className="text-xs text-gray-500">{growthHeaderHint}</p>}
 
           <div className="flex items-center gap-4 mt-4 p-4 bg-[#1E2A3A] rounded-xl">
+
             <div className="text-center">
               <div className="text-4xl font-bold text-white">78</div>
               <div className="text-white/50 text-xs">综合能力分</div>
@@ -74,16 +91,19 @@ export default function Growth() {
             </div>
           </div>
 
-          <div className="mt-3 rounded-xl border border-[#D9E5FF] bg-[#F7FAFF] p-3 flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#EEF2FF] flex items-center justify-center flex-shrink-0">
-              <Target size={16} className="text-[#2F5FD0]" />
+          {showCurrentStageCard && (
+            <div className="mt-3 rounded-xl border border-[#D9E5FF] bg-[#F7FAFF] p-3 flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#EEF2FF] flex items-center justify-center flex-shrink-0">
+                <Target size={16} className="text-[#2F5FD0]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900">当前阶段：{currentStage.label}</p>
+                <p className="text-xs text-gray-500 mt-1 leading-relaxed">{currentStage.desc}</p>
+                <p className="text-xs text-[#2F5FD0] mt-2">下一步：{currentStage.nextAction}</p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900">当前阶段：{currentStage.label}</p>
-              <p className="text-xs text-gray-500 mt-1 leading-relaxed">{currentStage.desc}</p>
-              <p className="text-xs text-[#2F5FD0] mt-2">下一步：{currentStage.nextAction}</p>
-            </div>
-          </div>
+          )}
+
         </div>
       </div>
 
@@ -134,105 +154,111 @@ export default function Growth() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
-                <ClipboardList size={15} className="text-[#2F5FD0]" />
-                <span className="text-sm font-medium text-gray-900">补训任务</span>
-                <div className="ml-auto flex items-center gap-3">
-                  <button
-                    onClick={() => navigate("/learning/growth/retest-makeup")}
-                    className="text-xs text-[#16A34A] hover:text-green-700"
-                  >
-                    复测 / 补考页
-                  </button>
-                  <button
-                    onClick={() => navigate("/learning/growth/retrain")}
-                    className="text-xs text-[#2F5FD0] hover:text-[#2550B8]"
-                  >
-                    查看全部 →
-                  </button>
-                </div>
-              </div>
-              <div className="divide-y divide-gray-50">
-                {previewTasks.map((task) => (
-                  <div key={task.id} className="px-4 py-3 flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-[#EEF2FF] flex items-center justify-center flex-shrink-0">
-                      <ClipboardList size={15} className="text-[#2F5FD0]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="text-sm text-gray-800">{task.title}</span>
-                        <span className={`text-xs px-1.5 py-0.5 rounded ${
-                          task.status === "done"
-                            ? "bg-green-100 text-[#16A34A]"
-                            : task.status === "in_progress"
-                              ? "bg-blue-100 text-[#2F5FD0]"
-                              : "bg-gray-100 text-gray-500"
-                        }`}>
-                          {task.status === "done" ? "已完成" : task.status === "in_progress" ? "进行中" : "待开始"}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-400">{task.deadline} · {task.duration}</p>
-                    </div>
+            {showRetrainTasksSection && (
+              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+                  <ClipboardList size={15} className="text-[#2F5FD0]" />
+                  <span className="text-sm font-medium text-gray-900">补训任务</span>
+                  <div className="ml-auto flex items-center gap-3">
                     <button
-                      onClick={() => navigate(task.path)}
+                      onClick={() => navigate("/learning/growth/retest-makeup")}
+                      className="text-xs text-[#16A34A] hover:text-green-700"
+                    >
+                      复测 / 补考页
+                    </button>
+                    <button
+                      onClick={() => navigate("/learning/growth/retrain")}
                       className="text-xs text-[#2F5FD0] hover:text-[#2550B8]"
                     >
-                      去完成
+                      查看全部 →
                     </button>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
-                <CheckCircle2 size={15} className="text-[#16A34A]" />
-                <span className="text-sm font-medium text-gray-900">表现优秀的地方</span>
-              </div>
-              <div className="divide-y divide-gray-50">
-                {strengths.map((s, i) => (
-                  <div key={i} className="px-4 py-3 flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center">
-                      <Award size={16} className="text-[#16A34A]" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-800">{s.area}</span>
-                        <span className="text-xs text-[#16A34A] bg-green-50 px-1.5 py-0.5 rounded">{s.score}分</span>
+                </div>
+                <div className="divide-y divide-gray-50">
+                  {previewTasks.map((task) => (
+                    <div key={task.id} className="px-4 py-3 flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-[#EEF2FF] flex items-center justify-center flex-shrink-0">
+                        <ClipboardList size={15} className="text-[#2F5FD0]" />
                       </div>
-                      <p className="text-xs text-gray-400 mt-0.5">{s.note}</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="text-sm text-gray-800">{task.title}</span>
+                          <span className={`text-xs px-1.5 py-0.5 rounded ${
+                            task.status === "done"
+                              ? "bg-green-100 text-[#16A34A]"
+                              : task.status === "in_progress"
+                                ? "bg-blue-100 text-[#2F5FD0]"
+                                : "bg-gray-100 text-gray-500"
+                          }`}>
+                            {task.status === "done" ? "已完成" : task.status === "in_progress" ? "进行中" : "待开始"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400">{task.deadline} · {task.duration}</p>
+                      </div>
+                      <button
+                        onClick={() => navigate(task.path)}
+                        className="text-xs text-[#2F5FD0] hover:text-[#2550B8]"
+                      >
+                        去完成
+                      </button>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp size={15} className="text-[#2F5FD0]" />
-                <span className="text-sm font-medium text-gray-900">近 5 月综合得分趋势</span>
+            {showStrengthsSection && (
+              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+                  <CheckCircle2 size={15} className="text-[#16A34A]" />
+                  <span className="text-sm font-medium text-gray-900">表现优秀的地方</span>
+                </div>
+                <div className="divide-y divide-gray-50">
+                  {strengths.map((s, i) => (
+                    <div key={i} className="px-4 py-3 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center">
+                        <Award size={16} className="text-[#16A34A]" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-800">{s.area}</span>
+                          <span className="text-xs text-[#16A34A] bg-green-50 px-1.5 py-0.5 rounded">{s.score}分</span>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-0.5">{s.note}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="h-36">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={trendData} margin={{ top: 5, right: 10, bottom: 0, left: -20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F0" />
-                    <XAxis dataKey="month" tick={{ fontSize: 10, fill: "#9CA3AF" }} />
-                    <YAxis tick={{ fontSize: 10, fill: "#9CA3AF" }} domain={[50, 100]} />
-                    <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8, border: "1px solid #E5E7EB" }} />
-                    <Line
-                      type="monotone"
-                      dataKey="score"
-                      stroke="#2F5FD0"
-                      strokeWidth={2}
-                      dot={{ r: 3, fill: "#2F5FD0" }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+            )}
 
-            {latestReview && (
+            {showTrendSection && (
+              <div className="bg-white rounded-xl p-4 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <TrendingUp size={15} className="text-[#2F5FD0]" />
+                  <span className="text-sm font-medium text-gray-900">近 5 月综合得分趋势</span>
+                </div>
+                <div className="h-36">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={trendData} margin={{ top: 5, right: 10, bottom: 0, left: -20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F0" />
+                      <XAxis dataKey="month" tick={{ fontSize: 10, fill: "#9CA3AF" }} />
+                      <YAxis tick={{ fontSize: 10, fill: "#9CA3AF" }} domain={[50, 100]} />
+                      <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8, border: "1px solid #E5E7EB" }} />
+                      <Line
+                        type="monotone"
+                        dataKey="score"
+                        stroke="#2F5FD0"
+                        strokeWidth={2}
+                        dot={{ r: 3, fill: "#2F5FD0" }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {showLatestReviewSection && latestReview && (
               <div className="bg-white rounded-xl shadow-sm p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Sparkles size={15} className="text-[#16A34A]" />
@@ -260,6 +286,7 @@ export default function Growth() {
                 </button>
               </div>
             )}
+
           </div>
 
           <div className="space-y-4">
@@ -318,27 +345,30 @@ export default function Growth() {
               </button>
             </div>
 
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <p className="text-sm font-medium text-gray-900 mb-3">快速行动</p>
-              <div className="space-y-2">
-                <button
-                  onClick={() => navigate("/learning/ai-practice")}
-                  className="w-full flex items-center gap-2 px-3 py-2 bg-purple-50 rounded-lg text-xs text-purple-700 hover:bg-purple-100 transition-colors"
-                >
-                  <Dumbbell size={13} />
-                  继续 AI 陪练（还差 3 次）
-                  <ChevronRight size={11} className="ml-auto" />
-                </button>
-                <button
-                  onClick={() => navigate("/learning/course/2")}
-                  className="w-full flex items-center gap-2 px-3 py-2 bg-orange-50 rounded-lg text-xs text-orange-700 hover:bg-orange-100 transition-colors"
-                >
-                  <BookOpen size={13} />
-                  补学工艺规范课程
-                  <ChevronRight size={11} className="ml-auto" />
-                </button>
+            {showQuickActionsSection && (
+              <div className="bg-white rounded-xl p-4 shadow-sm">
+                <p className="text-sm font-medium text-gray-900 mb-3">快速行动</p>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => navigate("/learning/ai-practice")}
+                    className="w-full flex items-center gap-2 px-3 py-2 bg-purple-50 rounded-lg text-xs text-purple-700 hover:bg-purple-100 transition-colors"
+                  >
+                    <Dumbbell size={13} />
+                    继续 AI 陪练（还差 3 次）
+                    <ChevronRight size={11} className="ml-auto" />
+                  </button>
+                  <button
+                    onClick={() => navigate("/learning/course/2")}
+                    className="w-full flex items-center gap-2 px-3 py-2 bg-orange-50 rounded-lg text-xs text-orange-700 hover:bg-orange-100 transition-colors"
+                  >
+                    <BookOpen size={13} />
+                    补学工艺规范课程
+                    <ChevronRight size={11} className="ml-auto" />
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
+
           </div>
         </div>
       </div>

@@ -46,14 +46,14 @@ export default function BusinessOverview() {
             onClick={() => navigate("/workbench/dashboard")}
             className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-3"
           >
-            <ArrowLeft size={16} /> 返回带教看板
+              <ArrowLeft size={16} /> 返回异常看板
           </button>
 
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
               <div className="flex items-center gap-2 flex-wrap mb-2">
-                <span className="text-xs px-2 py-0.5 rounded-full bg-[#EEF4FF] text-[#2F5FD0]">新增经营视角</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-red-50 text-[#DC2626]">管理层总览</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-[#EEF4FF] text-[#2F5FD0]">社区运营总览</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-red-50 text-[#DC2626]">管理层看盘</span>
               </div>
               <h1 className="text-gray-900 text-base leading-snug mb-1">{businessOverviewSummary.title}</h1>
               <p className="text-sm text-gray-500 leading-relaxed max-w-4xl">{businessOverviewSummary.desc}</p>
@@ -69,7 +69,7 @@ export default function BusinessOverview() {
                 onClick={() => navigate("/workbench/dashboard/tasks")}
                 className="px-3 py-1.5 rounded-lg bg-[#2F5FD0] hover:bg-[#2550B8] text-white text-xs transition-colors"
               >
-                去带教任务页
+                去运营任务页
               </button>
             </div>
           </div>
@@ -91,7 +91,7 @@ export default function BusinessOverview() {
           <div className="bg-white rounded-xl shadow-sm p-4">
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp size={16} className="text-[#2F5FD0]" />
-              <span className="text-sm font-medium text-gray-900">关键经营漏斗</span>
+              <span className="text-sm font-medium text-gray-900">社区运营漏斗</span>
             </div>
             <div className="grid md:grid-cols-5 gap-3">
               {funnelStages.map((item, index) => (
@@ -121,25 +121,25 @@ export default function BusinessOverview() {
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <p className="text-sm font-medium text-gray-900">{store.store}</p>
                         {bestStore.store === store.store && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-[#15803D]">签单率最佳</span>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-[#15803D]">运营健康最佳</span>
                         )}
                         {highestOverdueStore.store === store.store && store.overtimeNodes > 0 && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-[#DC2626]">超时最多</span>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-[#DC2626]">风险节点最多</span>
                         )}
                       </div>
                       <p className="text-xs text-gray-500 leading-relaxed">{store.managerNote}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-gray-400">签单率</p>
+                      <p className="text-sm text-gray-400">运营健康</p>
                       <p className={`text-lg font-semibold ${store.signRate >= 18 ? "text-[#15803D]" : "text-[#DC2626]"}`}>{store.signRate}%</p>
                     </div>
                   </div>
                   <div className="grid md:grid-cols-4 gap-2 mt-3">
                     {[
-                      { label: "接待", value: `${store.receptionCount}` },
-                      { label: "报价", value: `${store.quoteCount}` },
-                      { label: "签单", value: `${store.signCount}` },
-                      { label: "超时节点", value: `${store.overtimeNodes}` },
+                      { label: "资源总盘", value: `${store.receptionCount}` },
+                      { label: "已开拓", value: `${store.quoteCount}` },
+                      { label: "签单达标", value: `${store.signCount}` },
+                      { label: "风险节点", value: `${store.overtimeNodes}` },
                     ].map((item) => (
                       <div key={item.label} className="rounded-lg bg-white border border-gray-200 px-3 py-2.5">
                         <p className="text-xs text-gray-400 mb-1">{item.label}</p>
@@ -166,7 +166,7 @@ export default function BusinessOverview() {
                         <p className="text-sm font-medium text-gray-900">{staff.name}</p>
                         <span className="text-xs text-gray-400">{staff.role} · {staff.store}</span>
                         {highestSignStaff.name === staff.name && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-[#15803D]">签单效率最好</span>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-[#15803D]">推进效率最好</span>
                         )}
                         {highestRiskStaff.name === staff.name && staff.overdueItems > 0 && (
                           <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-[#DC2626]">待跟进较多</span>
@@ -181,7 +181,7 @@ export default function BusinessOverview() {
                   <div className="grid md:grid-cols-4 gap-2 mt-3">
                     {[
                       { label: "加微率", value: `${staff.addWechatRate}%` },
-                      { label: "方案率", value: `${staff.proposalRate}%` },
+                      { label: "过程达标", value: `${staff.proposalRate}%` },
                       { label: "签单率", value: `${staff.signRate}%` },
                       { label: "超时项", value: `${staff.overdueItems}` },
                     ].map((item) => (
@@ -201,14 +201,14 @@ export default function BusinessOverview() {
           <div className="bg-white rounded-xl shadow-sm p-4">
             <div className="flex items-center gap-2 mb-3">
               <Clock3 size={16} className="text-[#F59E0B]" />
-              <span className="text-sm font-medium text-gray-900">超时节点</span>
+              <span className="text-sm font-medium text-gray-900">滞后节点</span>
             </div>
             <div className="space-y-3">
               {overtimeNodes.map((item) => (
                 <div key={item.id} className="rounded-xl border border-amber-100 bg-amber-50 px-3.5 py-3">
                   <div className="flex items-center justify-between gap-2 mb-1.5">
                     <p className="text-sm font-medium text-gray-900">{item.orderNo}</p>
-                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-white text-[#B45309]">超时 {item.overdueDays} 天</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-white text-[#B45309]">滞后 {item.overdueDays} 天</span>
                   </div>
                   <p className="text-xs text-gray-500">{item.customer} · {item.stage}</p>
                   <p className="text-xs text-gray-600 mt-2 leading-relaxed">{item.impact}</p>
@@ -262,7 +262,7 @@ export default function BusinessOverview() {
               className="rounded-xl border border-gray-200 bg-white px-3 py-3 text-left hover:bg-gray-50 transition-colors"
             >
               <TrendingUp size={14} className="text-[#2F5FD0] mb-2" />
-              <p className="text-sm font-medium text-gray-900">回带教看板</p>
+              <p className="text-sm font-medium text-gray-900">回异常看板</p>
               <p className="text-xs text-gray-500 mt-1">继续看动作盘</p>
             </button>
             <button

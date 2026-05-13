@@ -18,7 +18,16 @@ import {
 } from "lucide-react";
 import { getCourseDetailById } from "../data/learningData";
 
+const courseDetailSectionVisibility = {
+  versionSummary: false,
+  learningPurpose: false,
+  courseInfoRail: false,
+  learningReminderRail: false,
+  quickEntryRail: false,
+} as const;
+
 export default function CourseDetail() {
+
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -28,8 +37,15 @@ export default function CourseDetail() {
   const completedSections = course.sections.filter((section) => section.done).length;
   const progress = Math.round((completedSections / course.sections.length) * 100);
   const isLocked = course.status === "locked";
+  const showCourseDetailRightRail =
+    courseDetailSectionVisibility.courseInfoRail ||
+    courseDetailSectionVisibility.learningReminderRail ||
+    courseDetailSectionVisibility.quickEntryRail;
+  const courseDetailGridClass = showCourseDetailRightRail ? "grid md:grid-cols-3 gap-4" : "grid gap-4";
+  const courseDetailMainColumnClass = showCourseDetailRightRail ? "md:col-span-2 space-y-4" : "space-y-4";
 
   return (
+
     <div className="min-h-full bg-[#F5F7FA]">
       <div className="bg-white border-b border-gray-200 px-4 md:px-6 pt-4 pb-4">
         <div className="max-w-5xl mx-auto">
@@ -82,9 +98,10 @@ export default function CourseDetail() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-4">
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="md:col-span-2 space-y-4">
-            {course.versionChange && (
+        <div className={courseDetailGridClass}>
+          <div className={courseDetailMainColumnClass}>
+            {course.versionChange && courseDetailSectionVisibility.versionSummary && (
+
               <div className="bg-amber-50 border border-amber-200 rounded-xl overflow-hidden">
                 <button
                   onClick={() => setExpandChanges(!expandChanges)}
@@ -118,38 +135,43 @@ export default function CourseDetail() {
               </div>
             )}
 
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Target size={15} className="text-[#2F5FD0]" />
-                <span className="text-sm font-medium text-gray-900">学这门课要解决什么</span>
-              </div>
-              <div className="grid md:grid-cols-2 gap-3">
-                <div className="rounded-xl bg-[#F7FAFF] border border-[#D9E5FF] p-3">
-                  <p className="text-xs font-medium text-gray-900 mb-2">学习目标</p>
-                  <div className="space-y-2">
-                    {course.learningGoals.map((goal) => (
-                      <div key={goal} className="flex items-start gap-2 text-xs text-gray-600">
-                        <CheckCircle2 size={12} className="text-[#2F5FD0] mt-0.5 flex-shrink-0" />
-                        <span>{goal}</span>
-                      </div>
-                    ))}
+            {courseDetailSectionVisibility.learningPurpose && (
+              <div className="bg-white rounded-xl shadow-sm p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Target size={15} className="text-[#2F5FD0]" />
+                  <span className="text-sm font-medium text-gray-900">学这门课要解决什么</span>
+                </div>
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div className="rounded-xl bg-[#F7FAFF] border border-[#D9E5FF] p-3">
+                    <p className="text-xs font-medium text-gray-900 mb-2">学习目标</p>
+                    <div className="space-y-2">
+                      {course.learningGoals.map((goal) => (
+                        <div key={goal} className="flex items-start gap-2 text-xs text-gray-600">
+                          <CheckCircle2 size={12} className="text-[#2F5FD0] mt-0.5 flex-shrink-0" />
+                          <span>{goal}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-[#FAFBFC] border border-gray-200 p-3">
+                    <p className="text-xs font-medium text-gray-900 mb-2">适用场景</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {course.applicableScenes.map((scene) => (
+                        <span key={scene} className="text-xs px-2 py-1 rounded-full bg-white border border-gray-200 text-gray-600">
+                          {scene}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-3 leading-relaxed">{course.note}</p>
                   </div>
                 </div>
-                <div className="rounded-xl bg-[#FAFBFC] border border-gray-200 p-3">
-                  <p className="text-xs font-medium text-gray-900 mb-2">适用场景</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {course.applicableScenes.map((scene) => (
-                      <span key={scene} className="text-xs px-2 py-1 rounded-full bg-white border border-gray-200 text-gray-600">
-                        {scene}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-3 leading-relaxed">{course.note}</p>
-                </div>
               </div>
-            </div>
+            )}
+
+
 
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+
               <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                 <h2 className="text-sm font-medium text-gray-900">课程目录</h2>
                 <span className="text-xs text-gray-400">重点节会标记为“重点”</span>
@@ -243,73 +265,82 @@ export default function CourseDetail() {
             </button>
           </div>
 
-          <div className="space-y-4">
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <h3 className="text-sm font-medium text-gray-900 mb-3">课程信息</h3>
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between gap-3">
-                  <span className="text-gray-500">分类</span>
-                  <span className="text-gray-700 text-right">{course.category}</span>
+          {showCourseDetailRightRail && (
+            <div className="space-y-4">
+              {courseDetailSectionVisibility.courseInfoRail && (
+                <div className="bg-white rounded-xl p-4 shadow-sm">
+                  <h3 className="text-sm font-medium text-gray-900 mb-3">课程信息</h3>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between gap-3">
+                      <span className="text-gray-500">分类</span>
+                      <span className="text-gray-700 text-right">{course.category}</span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-gray-500">当前版本</span>
+                      <span className="text-[#2F5FD0] font-medium">{course.version}</span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-gray-500">更新时间</span>
+                      <span className="text-gray-700 text-right">{course.updatedAt}</span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-gray-500">发布机构</span>
+                      <span className="text-gray-700 text-right">{course.author}</span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-gray-500">完成要求</span>
+                      <span className={course.urgency === "urgent" ? "text-[#DC2626] font-medium text-right" : "text-gray-700 text-right"}>
+                        {course.deadline}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between gap-3">
-                  <span className="text-gray-500">当前版本</span>
-                  <span className="text-[#2F5FD0] font-medium">{course.version}</span>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <span className="text-gray-500">更新时间</span>
-                  <span className="text-gray-700 text-right">{course.updatedAt}</span>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <span className="text-gray-500">发布机构</span>
-                  <span className="text-gray-700 text-right">{course.author}</span>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <span className="text-gray-500">完成要求</span>
-                  <span className={course.urgency === "urgent" ? "text-[#DC2626] font-medium text-right" : "text-gray-700 text-right"}>
-                    {course.deadline}
-                  </span>
-                </div>
-              </div>
-            </div>
+              )}
 
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <h3 className="text-sm font-medium text-gray-900 mb-3">学习提醒</h3>
-              <div className="rounded-lg bg-[#F5F7FA] p-3">
-                <p className="text-xs text-gray-700 leading-relaxed">
-                  {course.versionChange
-                    ? "这门课涉及版本变化，建议先看变更摘要，再学习新增与重点章节。"
-                    : "建议先过一遍目录中的重点章节，再决定是否去做陪练或考核。"}
-                </p>
-              </div>
-            </div>
+              {courseDetailSectionVisibility.learningReminderRail && (
+                <div className="bg-white rounded-xl p-4 shadow-sm">
+                  <h3 className="text-sm font-medium text-gray-900 mb-3">学习提醒</h3>
+                  <div className="rounded-lg bg-[#F5F7FA] p-3">
+                    <p className="text-xs text-gray-700 leading-relaxed">
+                      {course.versionChange
+                        ? "这门课涉及版本变化，建议先看变更摘要，再学习新增与重点章节。"
+                        : "建议先过一遍目录中的重点章节，再决定是否去做陪练或考核。"}
+                    </p>
+                  </div>
+                </div>
+              )}
 
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <h3 className="text-sm font-medium text-gray-900 mb-3">快速入口</h3>
-              <div className="space-y-2">
-                <button
-                  onClick={() => navigate(course.relatedQnA.path)}
-                  className="w-full flex items-center gap-2 px-3 py-2 bg-[#F5F7FA] hover:bg-gray-100 rounded-lg text-xs text-gray-600 transition-colors"
-                >
-                  <BookOpen size={13} className="text-[#2F5FD0]" />
-                  遇到问题？去 AI 问答
-                </button>
-                <button
-                  onClick={() => navigate(course.relatedAssessment.path)}
-                  className="w-full flex items-center gap-2 px-3 py-2 bg-[#F5F7FA] hover:bg-gray-100 rounded-lg text-xs text-gray-600 transition-colors"
-                >
-                  <FileText size={13} className="text-[#2F5FD0]" />
-                  学完去考核验证
-                </button>
-                <button
-                  onClick={() => navigate(course.relatedPractice.path)}
-                  className="w-full flex items-center gap-2 px-3 py-2 bg-[#F5F7FA] hover:bg-gray-100 rounded-lg text-xs text-gray-600 transition-colors"
-                >
-                  <Dumbbell size={13} className="text-[#2F5FD0]" />
-                  学完去做陪练
-                </button>
-              </div>
+              {courseDetailSectionVisibility.quickEntryRail && (
+                <div className="bg-white rounded-xl p-4 shadow-sm">
+                  <h3 className="text-sm font-medium text-gray-900 mb-3">快速入口</h3>
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => navigate(course.relatedQnA.path)}
+                      className="w-full flex items-center gap-2 px-3 py-2 bg-[#F5F7FA] hover:bg-gray-100 rounded-lg text-xs text-gray-600 transition-colors"
+                    >
+                      <BookOpen size={13} className="text-[#2F5FD0]" />
+                      遇到问题？去 AI 问答
+                    </button>
+                    <button
+                      onClick={() => navigate(course.relatedAssessment.path)}
+                      className="w-full flex items-center gap-2 px-3 py-2 bg-[#F5F7FA] hover:bg-gray-100 rounded-lg text-xs text-gray-600 transition-colors"
+                    >
+                      <FileText size={13} className="text-[#2F5FD0]" />
+                      学完去考核验证
+                    </button>
+                    <button
+                      onClick={() => navigate(course.relatedPractice.path)}
+                      className="w-full flex items-center gap-2 px-3 py-2 bg-[#F5F7FA] hover:bg-gray-100 rounded-lg text-xs text-gray-600 transition-colors"
+                    >
+                      <Dumbbell size={13} className="text-[#2F5FD0]" />
+                      学完去做陪练
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          )}
+
         </div>
       </div>
     </div>

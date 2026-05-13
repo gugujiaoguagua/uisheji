@@ -63,12 +63,13 @@ export interface ReviewResult {
 }
 
 export const radarData = [
-  { subject: "新品知识", A: 85, fullMark: 100 },
-  { subject: "工艺规范", A: 68, fullMark: 100 },
+  { subject: "资源开拓", A: 62, fullMark: 100 },
+  { subject: "社群运营", A: 58, fullMark: 100 },
+  { subject: "数据判断", A: 64, fullMark: 100 },
+  { subject: "异常处理", A: 60, fullMark: 100 },
+  { subject: "转化推进", A: 66, fullMark: 100 },
+  { subject: "复盘沉淀", A: 55, fullMark: 100 },
   { subject: "销售话术", A: 90, fullMark: 100 },
-  { subject: "审单流程", A: 55, fullMark: 100 },
-  { subject: "协同规范", A: 72, fullMark: 100 },
-  { subject: "AI 陪练", A: 78, fullMark: 100 },
 ];
 
 export const trendData = [
@@ -80,6 +81,52 @@ export const trendData = [
 ];
 
 export const weakAreas: WeakArea[] = [
+  {
+    id: "community-growth",
+    area: "社群运营力",
+    score: 58,
+    gap: 22,
+    reason: "小区群人数长期低于目标，拉新动作、内容节奏和责任回执不够清晰",
+    action: "学习社群 SOP 课程 + 完成群人数异常陪练 + 做一次岗位复盘",
+    coursePath: "/learning/course/8",
+    urgency: "high",
+    summary: "能发现群人数不达标，但还不能稳定拆解资源、触达、内容和执行责任。",
+    impact: "会影响后续微信添加、QC、样板间和签单目标达成。",
+    examLabel: "社群运营 SOP 测试",
+    history: [
+      { label: "课程完成度", detail: "社群 SOP 课程未开始，群人数增长动作未形成固定清单", score: 0 },
+      { label: "陪练反馈", detail: "能提出拉新方向，但责任人和截止时间不够明确", score: 62 },
+      { label: "过程指标", detail: "最近 2 个小区群人数目标达成率低于 70%", score: 58 },
+    ],
+    focuses: [
+      { title: "先补社群 SOP", detail: "重点看建群、拉新、内容节奏和群人数异常处置四部分。" },
+      { title: "把异常拆成任务", detail: "每个动作必须有责任人、截止时间和回执口径。" },
+      { title: "用复盘确认动作有效", detail: "复盘不能只看群人数，要同步看添加微信和 QC 是否改善。" },
+    ],
+  },
+  {
+    id: "ops-data-judgement",
+    area: "数据判断力",
+    score: 64,
+    gap: 16,
+    reason: "能看到微信添加、QC、样板间异常，但原因拆解和优先级判断不够稳定",
+    action: "学习运营指标判断课，完成指标异常测试和一次 AI 陪练",
+    coursePath: "/learning/course/9",
+    urgency: "high",
+    summary: "当前看盘时容易只看单个结果，缺少过程指标之间的联动判断。",
+    impact: "会影响风险名单排序、任务派发优先级和管理者复盘质量。",
+    examLabel: "运营指标异常判断测试",
+    history: [
+      { label: "课程完成度", detail: "运营指标判断课未开始，过程指标口径尚未统一", score: 0 },
+      { label: "模拟看盘", detail: "能发现添加微信偏低，但未追到资源和触达环节", score: 66 },
+      { label: "任务拆解", detail: "动作描述偏笼统，缺少回执标准", score: 60 },
+    ],
+    focuses: [
+      { title: "先统一指标口径", detail: "把群人数、添加、QC、样板间、签单目标串起来看。" },
+      { title: "按风险对象分类", detail: "区分小区、门店、人员、转化四类风险，不混在一起处理。" },
+      { title: "输出下一步动作", detail: "异常判断必须落到任务、补训或复盘其中一个出口。" },
+    ],
+  },
   {
     id: "craft-standard",
     area: "工艺规范",
@@ -131,6 +178,7 @@ export const weakAreas: WeakArea[] = [
 export const strengths = [
   { area: "销售话术", score: 90, note: "连续 5 次陪练 85+，话术稳定" },
   { area: "新品知识", score: 85, note: "暖冬系列课程已完成，考核 88 分" },
+  { area: "协作意识", score: 82, note: "能主动识别销售、门店、设计之间的信息差" },
 ];
 
 export const milestones = [
@@ -142,6 +190,42 @@ export const milestones = [
 ];
 
 export const retrainTasks: RetrainTask[] = [
+  {
+    id: "task-ops-1",
+    weakAreaId: "community-growth",
+    title: "补学：社群建群与群人数增长 SOP",
+    type: "课程补学",
+    status: "in_progress",
+    deadline: "今天 18:00 前",
+    duration: "14 分钟",
+    owner: "你自己",
+    desc: "优先学习群人数增长动作和异常处置两节，学完进入运营陪练。",
+    path: "/learning/course/8",
+  },
+  {
+    id: "task-ops-2",
+    weakAreaId: "community-growth",
+    title: "练习：小区群人数不达标处置",
+    type: "专项练习",
+    status: "todo",
+    deadline: "今天下班前",
+    duration: "10 分钟",
+    owner: "系统安排",
+    desc: "在 AI 陪练中把资源、触达、内容节奏和责任回执说清楚。",
+    path: "/learning/ai-practice",
+  },
+  {
+    id: "task-ops-3",
+    weakAreaId: "ops-data-judgement",
+    title: "复测：运营指标异常判断测试",
+    type: "复测",
+    status: "todo",
+    deadline: "本周五",
+    duration: "25 分钟",
+    owner: "系统安排",
+    desc: "重点验证添加微信、QC、样板间和签单差额的原因拆解能力。",
+    path: "/learning/assessment",
+  },
   {
     id: "task-1",
     weakAreaId: "craft-standard",
@@ -252,9 +336,9 @@ export const reviewResults: ReviewResult[] = [
 ];
 
 export const currentStage = {
-  label: "补训巩固期",
-  desc: "你已经完成基础学习，当前重点是把薄弱项补齐并用复评确认。",
-  nextAction: "先完成工艺规范这一轮补训，再继续冲转岗资格任务。",
+  label: "运营岗位补强期",
+  desc: "当前重点是把社区运营的资源、社群、指标、转化和复盘能力补成闭环。",
+  nextAction: "先完成社群 SOP 和运营指标判断补训，再进入岗位认证与工作台任务联动。",
 };
 
 export function getWeakAreaById(id?: string) {

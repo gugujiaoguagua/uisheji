@@ -17,6 +17,7 @@ import Workbench from "./pages/Workbench";
 import InfoSync from "./pages/InfoSync";
 import InfoSyncDetail from "./pages/InfoSyncDetail";
 import ContentOps from "./pages/ContentOps";
+import ContentOpsDetail from "./pages/ContentOpsDetail";
 import VersionManagement from "./pages/VersionManagement";
 import Collab from "./pages/Collab";
 import RequestHandoff from "./pages/RequestHandoff";
@@ -78,6 +79,7 @@ export const router = createBrowserRouter([
       { path: "workbench/info-sync/records", Component: UpdateRecords },
       { path: "workbench/content-ops", Component: ContentOps },
       { path: "workbench/content-ops/version/:id", Component: VersionManagement },
+      { path: "workbench/content-ops/:detailType/:id", Component: ContentOpsDetail },
       { path: "workbench/collab", Component: Collab },
       { path: "workbench/collab/request/:id", Component: RequestHandoff },
       { path: "workbench/collab/review/:id", Component: ReviewPreparation },

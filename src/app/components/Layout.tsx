@@ -28,6 +28,7 @@ import {
 import {
   useApp,
   getIdentityLabel,
+  getLearnerRoleMeta,
   getStaffApprovalStatusMeta,
 } from "../context/AppContext";
 import { appActionClass, appShellClass, appSurfaceClass, getApprovalStatusToneClass } from "../lib/visualTokens";
@@ -68,12 +69,12 @@ const navItems: NavItem[] = [
     children: [
       { key: "workbench-home", label: "今日待办", path: "/workbench", icon: <ClipboardList size={16} /> },
       { key: "info-sync", label: "信息同步中心", path: "/workbench/info-sync", icon: <RefreshCw size={16} /> },
-      { key: "content-ops", label: "培训运营", path: "/workbench/content-ops", icon: <Layers size={16} /> },
+      { key: "content-ops", label: "社区运营", path: "/workbench/content-ops", icon: <Layers size={16} /> },
       { key: "collab", label: "销售-设计协同", path: "/workbench/collab", icon: <ArrowLeftRight size={16} /> },
       { key: "order-review", label: "审单·回流", path: "/workbench/order-review", icon: <FileCheck size={16} /> },
       { key: "blueprint", label: "产品蓝图", path: "/workbench/blueprint", icon: <GitBranch size={16} /> },
       { key: "approvals", label: "审批·申请", path: "/workbench/approvals", icon: <Shield size={16} /> },
-      { key: "dashboard", label: "带教看板", path: "/workbench/dashboard", icon: <BarChart3 size={16} /> },
+      { key: "dashboard", label: "异常看板", path: "/workbench/dashboard", icon: <BarChart3 size={16} /> },
     ],
   },
   {
@@ -127,6 +128,7 @@ export function Layout() {
   };
 
   const isStaff = currentIdentity === "staff";
+  const learnerRoleMeta = getLearnerRoleMeta(user?.learnerRole);
   const approvalMeta = user ? getStaffApprovalStatusMeta(user.staffApprovalStatus) : null;
   const identityChoices = user?.availableIdentities ?? [];
 
@@ -210,7 +212,7 @@ export function Layout() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm text-white truncate">{user?.name}</div>
-              <div className="text-sm text-white/60 truncate">{user?.role}</div>
+              <div className="text-sm text-white/60 truncate">{isStaff ? user?.role : `学习身份：${learnerRoleMeta.label}`}</div>
               {user && (
                 <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
                   <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/85">
@@ -302,6 +304,7 @@ export function Layout() {
           {user && (
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm text-gray-500">主身份：{getIdentityLabel(user.primaryIdentity)}</span>
+              {!isStaff && <span className="text-sm text-[#2F5FD0]">学习身份：{learnerRoleMeta.label}</span>}
               {approvalMeta && (
                 <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${
                   user.staffApprovalStatus === "approved"
@@ -327,7 +330,14 @@ export function Layout() {
                 autoFocus
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="搜索课程、文档、问题..."
+                placeholder="搜索所有身份课程..."
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter") return;
+                  const keyword = searchQuery.trim();
+                  if (!keyword) return;
+                  navigate(`/learning?keyword=${encodeURIComponent(keyword)}`);
+                  setShowSearch(false);
+                }}
                 className="bg-transparent text-sm outline-none w-56 text-gray-700 placeholder-gray-400"
               />
               <button onClick={() => setShowSearch(false)} className="text-gray-400 hover:text-gray-600">
@@ -368,7 +378,7 @@ export function Layout() {
           </button>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden pb-16 md:pb-0">
           <Outlet key={currentIdentity} />
         </main>
 
