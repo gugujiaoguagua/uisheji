@@ -1112,21 +1112,9 @@ export default function Home() {
                           : `${user?.name}，今天先处理风险和待办`
                   : `${user?.name}，${currentStudentState.heroTitle}`}
               </h1>
-              {(isStaff || homeSectionVisibility.studentHeroDescription) && (
+              {!isStaff && homeSectionVisibility.studentHeroDescription && (
                 <p className="text-white/80 text-sm mt-2 leading-relaxed">
-                  {isStaff
-                    ? isTrainingTeacher
-                      ? `${staffRoleMeta.label}视角 · 主身份${user ? getIdentityLabel(user.primaryIdentity) : "工作人员"} · 首页只显示培养相关事项`
-                      : isOpsStaff
-                        ? `${staffRoleMeta.label}视角 · 主身份${user ? getIdentityLabel(user.primaryIdentity) : "工作人员"} · 首页只显示资源、社群、转化、数据口径相关事项`
-                        : isDesignerStaff
-                          ? `${staffRoleMeta.label}视角 · 主身份${user ? getIdentityLabel(user.primaryIdentity) : "工作人员"} · 首页只显示方案讲解、图纸准备、会审反馈和设计协同相关事项`
-                          : isSalesStaff
-                            ? `${staffRoleMeta.label}视角 · 主身份${user ? getIdentityLabel(user.primaryIdentity) : "工作人员"} · 首页只显示客户跟进、报价推进、销设协同和公司产品相关事项`
-                            : isOrderReviewerStaff
-                              ? `${staffRoleMeta.label}视角 · 主身份${user ? getIdentityLabel(user.primaryIdentity) : "工作人员"} · 首页只显示订单校验、异常标注、责任归因和回流培训事项`
-                            : `${staffRoleMeta.label}视角 · 主身份${user ? getIdentityLabel(user.primaryIdentity) : "工作人员"} · 首页只显示当前岗位相关事项`
-                    : `学员视角 · 当前学习身份：${learnerRoleMeta.label} · ${currentStudentState.heroDesc}`}
+                  学员视角 · 当前学习身份：{learnerRoleMeta.label} · {currentStudentState.heroDesc}
                 </p>
               )}
 

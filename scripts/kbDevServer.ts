@@ -34,11 +34,31 @@ type KbQueryPayload = {
   top_k?: number;
 };
 
-const DEFAULT_KB_ROOT = "D:/AI课程/1数据整理/2.知识库";
-const kbRoot = process.env.ZHIYOU_KB_ROOT || DEFAULT_KB_ROOT;
+function loadLocalEnv() {
+  for (const filename of [".env.local", ".env"]) {
+    const envPath = path.resolve(process.cwd(), filename);
+    if (!fs.existsSync(envPath)) continue;
+    const raw = fs.readFileSync(envPath, "utf-8");
+    for (const line of raw.split(/\r?\n/)) {
+      const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
+      if (!match || process.env[match[1]]) continue;
+      process.env[match[1]] = match[2].trim().replace(/^['"]|['"]$/g, "");
+    }
+  }
+}
+
+loadLocalEnv();
+
+const DEFAULT_DATA_ROOT = "D:/AI课程/1数据整理";
+const dataRoot = process.env.ZHIYOU_DATA_ROOT || DEFAULT_DATA_ROOT;
+const kbRoot = process.env.ZHIYOU_KB_ROOT || path.join(dataRoot, "2.知识库");
 const officialRoot = path.join(kbRoot, "4.正式知识库");
 const structuredRoot = path.join(kbRoot, "5.结构化数据集");
 const snapshotId = process.env.ZHIYOU_KB_SNAPSHOT_ID || "kb-v1.3-local";
+const minimaxApiKey = process.env.MINIMAX_API_KEY || "";
+const minimaxBaseUrl = process.env.MINIMAX_BASE_URL || "https://api.minimaxi.com/anthropic";
+const minimaxModel = process.env.MINIMAX_MODEL || "MiniMax-M2.7";
+const minimaxApiStyle = process.env.MINIMAX_API_STYLE || (minimaxBaseUrl.includes("/anthropic") ? "anthropic" : "openai");
 
 let cachedEntries: KbEntry[] | null = null;
 let cachedAt = "";
@@ -46,7 +66,18 @@ let cachedAt = "";
 function sendJson(res: ServerResponse, statusCode: number, payload: unknown) {
   res.statusCode = statusCode;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.end(JSON.stringify(payload));
+}
+
+function sendNoContent(res: ServerResponse) {
+  res.statusCode = 204;
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.end();
 }
 
 function readJson(req: IncomingMessage): Promise<KbQueryPayload> {
@@ -135,12 +166,24 @@ function asArray(meta: KbMeta, key: string) {
 function loadEntries() {
   if (cachedEntries) return cachedEntries;
 
-  const files = walkFiles(officialRoot, [".md"]);
+  const roots = [
+    officialRoot,
+    path.join(dataRoot, "录音", "录音处理后"),
+    path.join(dataRoot, "文档", "文档处理后"),
+    path.join(dataRoot, "录音", "录音文本"),
+    path.join(dataRoot, "文档", "文档文本"),
+  ];
+  const files = Array.from(new Set([
+    ...roots.flatMap((root) => walkFiles(root, [".md", ".txt"])),
+    ...walkFiles(dataRoot, [".md", ".txt"]).filter((filePath) => path.dirname(filePath) === dataRoot),
+  ]));
   cachedEntries = files
     .map((filePath) => {
       const markdown = fs.readFileSync(filePath, "utf-8");
       const { meta, body } = parseFrontmatter(markdown);
       const id = asString(meta, "id") || path.basename(filePath, ".md");
+      const relativePath = path.relative(dataRoot, filePath).replace(/\\/g, "/");
+      const category = relativePath.split("/").slice(0, -1).join("/") || "根目录";
 
       return {
         id,
@@ -159,13 +202,16 @@ function loadEntries() {
         summary: asString(meta, "summary"),
         updated_at: asString(meta, "updated_at"),
         tags: asArray(meta, "tags"),
-        category: path.basename(path.dirname(filePath)),
+        category,
         filePath,
-        relativePath: path.relative(officialRoot, filePath).replace(/\\/g, "/"),
+        relativePath,
         body,
       };
     })
-    .filter((entry) => entry.status === "current" && entry.review_status === "approved");
+    .filter((entry) => {
+      if (!entry.status && !entry.review_status) return true;
+      return (!entry.status || entry.status === "current") && (!entry.review_status || entry.review_status === "approved");
+    });
 
   cachedAt = new Date().toISOString();
   return cachedEntries;
@@ -175,6 +221,7 @@ function getHealth() {
   const entries = loadEntries();
   return {
     kb_snapshot_id: snapshotId,
+    data_root: dataRoot,
     source_root: officialRoot,
     structured_root: structuredRoot,
     entry_count: entries.length,
@@ -328,7 +375,152 @@ function buildAnswer(question: string, hits: Array<{ entry: KbEntry; score: numb
   };
 }
 
-function queryKnowledgeBase(payload: KbQueryPayload) {
+function stripThinkTags(value: string) {
+  return value.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+}
+
+function pickFirstSentence(value: string) {
+  return stripMarkdown(value)
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .find(Boolean)
+    ?.slice(0, 180) || "我先基于知识库给您核实口径。";
+}
+
+function extractJsonObject(value: string) {
+  const cleaned = stripThinkTags(value)
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```$/i, "")
+    .trim();
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start < 0 || end <= start) return null;
+  try {
+    return JSON.parse(cleaned.slice(start, end + 1)) as { direct_answer?: string; answer?: string };
+  } catch {
+    return null;
+  }
+}
+
+function buildMiniMaxPrompt(question: string, hits: Array<{ entry: KbEntry; score: number }>, tokens: string[]) {
+  const contexts = hits.slice(0, 5).map(({ entry }, index) => {
+    const excerpts = extractExcerpts(entry, tokens).join("\n");
+    return [
+      `[K${index + 1}] ${entry.title}`,
+      `来源：${entry.relativePath}`,
+      `版本：${entry.version || "未标注版本"} ${entry.kb_revision || ""}`,
+      excerpts,
+    ].join("\n");
+  });
+
+  return [
+    "你是智柚内部知识库问答助手。",
+    "必须只依据下面提供的知识库片段回答；如果片段不足，明确说明不能承诺，不要编造。",
+    "输出严格 JSON，不要输出 Markdown 代码块：",
+    '{"direct_answer":"可直接对客户说的话，80字以内","answer":"内部详细解释，包含依据摘要、风险提醒、下一步建议"}',
+    "",
+    `用户问题：${question}`,
+    "",
+    "知识库片段：",
+    contexts.join("\n\n---\n\n"),
+  ].join("\n");
+}
+
+function parseMiniMaxAnswer(content: string, question: string, hits: Array<{ entry: KbEntry; score: number }>, tokens: string[]) {
+  const parsed = extractJsonObject(content);
+  const answer = stripThinkTags(parsed?.answer || content);
+  return {
+    direct_answer: stripMarkdown(parsed?.direct_answer || pickFirstSentence(answer)),
+    answer: answer || buildAnswer(question, hits, tokens).answer,
+  };
+}
+
+async function callMiniMaxOpenAI(question: string, hits: Array<{ entry: KbEntry; score: number }>, tokens: string[]) {
+  const response = await fetch(`${minimaxBaseUrl.replace(/\/$/, "")}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${minimaxApiKey}`,
+    },
+    body: JSON.stringify({
+      model: minimaxModel,
+      messages: [
+        {
+          role: "system",
+          content: "你是严谨的企业知识库问答助手。只基于给定资料回答，避免过度承诺。",
+        },
+        {
+          role: "user",
+          content: buildMiniMaxPrompt(question, hits, tokens),
+        },
+      ],
+      temperature: 0.3,
+      max_tokens: 900,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`MiniMax 调用失败：${response.status}`);
+  }
+
+  const data = await response.json() as {
+    choices?: Array<{ message?: { content?: string } }>;
+  };
+  const content = data.choices?.[0]?.message?.content || "";
+  return parseMiniMaxAnswer(content, question, hits, tokens);
+}
+
+async function callMiniMaxAnthropic(question: string, hits: Array<{ entry: KbEntry; score: number }>, tokens: string[]) {
+  const baseUrl = minimaxBaseUrl.replace(/\/$/, "");
+  const endpoint = baseUrl.endsWith("/v1") ? `${baseUrl}/messages` : `${baseUrl}/v1/messages`;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "anthropic-version": "2023-06-01",
+      "x-api-key": minimaxApiKey,
+    },
+    body: JSON.stringify({
+      model: minimaxModel,
+      max_tokens: 900,
+      system: "你是严谨的企业知识库问答助手。只基于给定资料回答，避免过度承诺。",
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: buildMiniMaxPrompt(question, hits, tokens),
+            },
+          ],
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`MiniMax 调用失败：${response.status}`);
+  }
+
+  const data = await response.json() as {
+    content?: Array<{ type?: string; text?: string; thinking?: string }>;
+  };
+  const content = data.content
+    ?.filter((block) => block.type === "text" && block.text)
+    .map((block) => block.text)
+    .join("\n") || "";
+  return parseMiniMaxAnswer(content, question, hits, tokens);
+}
+
+async function callMiniMax(question: string, hits: Array<{ entry: KbEntry; score: number }>, tokens: string[]) {
+  if (!minimaxApiKey) return null;
+  return minimaxApiStyle === "anthropic"
+    ? callMiniMaxAnthropic(question, hits, tokens)
+    : callMiniMaxOpenAI(question, hits, tokens);
+}
+
+async function queryKnowledgeBase(payload: KbQueryPayload) {
   const question = payload.question?.trim() || "";
   const topK = Math.min(Math.max(payload.top_k || 5, 1), 10);
   const entries = loadEntries();
@@ -367,12 +559,26 @@ function queryKnowledgeBase(payload: KbQueryPayload) {
   }
 
   const confidence = hits[0].score >= 18 ? "high" : "mid";
+  const extractiveAnswer = buildAnswer(question, hits, tokens);
+  let llmAnswer: { direct_answer: string; answer: string } | null = null;
+
+  try {
+    llmAnswer = await callMiniMax(question, hits, tokens);
+  } catch (error) {
+    llmAnswer = {
+      direct_answer: extractiveAnswer.direct_answer,
+      answer: `${extractiveAnswer.answer}\n\n**MiniMax 状态：**${error instanceof Error ? error.message : "调用失败"}，当前已回退为本地知识库摘要。`,
+    };
+  }
+
   return {
-    ...buildAnswer(question, hits, tokens),
+    ...extractiveAnswer,
+    ...(llmAnswer || {}),
     confidence,
     fallback: false,
     trace_id: `kb-${Date.now()}`,
     kb_snapshot_id: snapshotId,
+    model: llmAnswer ? minimaxModel : "local-extractive",
   };
 }
 
@@ -389,6 +595,10 @@ export function kbDevServer() {
       });
 
       server.middlewares.use("/api/kb/query", async (req, res) => {
+        if (req.method === "OPTIONS") {
+          sendNoContent(res);
+          return;
+        }
         if (req.method !== "POST") {
           sendJson(res, 405, { error: "Method Not Allowed" });
           return;
@@ -396,13 +606,17 @@ export function kbDevServer() {
 
         try {
           const payload = await readJson(req);
-          sendJson(res, 200, queryKnowledgeBase(payload));
+          sendJson(res, 200, await queryKnowledgeBase(payload));
         } catch (error) {
           sendJson(res, 500, { error: error instanceof Error ? error.message : "知识库查询失败" });
         }
       });
 
       server.middlewares.use("/api/kb/feedback", async (req, res) => {
+        if (req.method === "OPTIONS") {
+          sendNoContent(res);
+          return;
+        }
         if (req.method !== "POST") {
           sendJson(res, 405, { error: "Method Not Allowed" });
           return;

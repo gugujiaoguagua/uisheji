@@ -118,11 +118,6 @@ export default function Messages() {
   const [receiptDoneIds, setReceiptDoneIds] = useState<string[]>([]);
   const [receiptUpdates, setReceiptUpdates] = useState<Record<string, string>>({});
   const [batchReceipt, setBatchReceipt] = useState<BatchReceipt | null>(null);
-  const isTrainingTeacherMessages = currentIdentity === "staff" && user?.staffRole === "training_teacher";
-  const isOpsMessages = currentIdentity === "staff" && user?.staffRole === "ops";
-  const isDesignerMessages = currentIdentity === "staff" && user?.staffRole === "designer";
-  const isSalesMessages = currentIdentity === "staff" && user?.staffRole === "sales";
-
   useEffect(() => {
     setCategory("all");
     setQuickFilter("all");
@@ -219,17 +214,6 @@ export default function Messages() {
           <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
             <div>
               <h1 className="text-gray-900">消息中心</h1>
-              <p className="text-sm text-gray-500 mt-1">
-                {isTrainingTeacherMessages
-                  ? "培训老师只看学员跟进、演练评分、公司产品确认和案例沉淀相关消息。"
-                  : isOpsMessages
-                    ? "运营只看资源开拓、社群过程、转化风险、数据口径和新人培养相关消息。"
-                    : isDesignerMessages
-                      ? "设计师只看销设协同、方案会审、公司产品确认和设计规范相关消息。"
-                      : isSalesMessages
-                        ? "销售只看客户跟进、报价推进、销设协同和公司产品确认相关消息。"
-                  : "保留现有统一承接入口，在页内补齐消息详情态、批量处理、处理回执和来源业务链路。"}
-              </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <button
@@ -262,38 +246,6 @@ export default function Messages() {
               ))}
             </div>
           )}
-
-
-          <div className="grid md:grid-cols-4 gap-2">
-            {Object.entries(categoryMeta).map(([key, meta]) => {
-              const count = activeMessages.filter((message) => message.category === key).length;
-              const unread = activeMessages.filter((message) => message.category === key && !isRead(message)).length;
-              const active = category === key;
-              if (count === 0) return null;
-
-              return (
-                <button
-                  key={key}
-                  onClick={() => setCategory(key as MessageCategory)}
-                  className={`rounded-xl border px-3 py-3 text-left transition-colors ${active ? meta.active : meta.idle}`}
-                >
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    {meta.icon}
-                    {meta.label}
-                  </div>
-                  <p className={`text-xs mt-1 ${active ? "text-white/80" : "text-gray-400"}`}>{meta.desc}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className={`text-lg font-semibold ${active ? "text-white" : "text-gray-900"}`}>{count}</span>
-                    {unread > 0 && (
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full ${active ? "bg-white/15 text-white" : "bg-red-100 text-[#DC2626]"}`}>
-                        {unread} 未读
-                      </span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
 
           <div className="flex items-center gap-2 mt-3 flex-wrap">
             <button

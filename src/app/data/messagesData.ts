@@ -424,7 +424,6 @@ export const trainingTeacherMessages: MessageItem[] = [
     ],
     relatedLinks: [
       { label: "进入学员看板", path: "/workbench/dashboard", desc: "查看待评分学员和分项结果", emphasis: "primary" },
-      { label: "回培训工作台", path: "/workbench", desc: "查看培训老师今日优先动作" },
     ],
     receipt: {
       status: "processing",

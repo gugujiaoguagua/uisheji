@@ -29,10 +29,9 @@ import {
   processMetrics,
   resourceRows,
   riskItems,
-  summaryCards,
   teamHealth,
 } from "../data/communityOpsData";
-import { trainingCaseLibrary, trainingFollowUpTasks } from "../data/trainingTeacherData";
+import { trainingCaseLibrary } from "../data/trainingTeacherData";
 
 type OpsView = "overview" | "resource" | "process" | "governance" | "conversion" | "method" | "enablement";
 
@@ -89,8 +88,6 @@ function methodIcon(icon: string) {
 function TrainingTeacherCases() {
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState<"library" | "method" | "scripts" | "review">("library");
-  const reusableCount = trainingCaseLibrary.filter((item) => item.status === "可复用").length;
-  const pendingCount = trainingCaseLibrary.length - reusableCount;
 
   return (
     <div className="min-h-full bg-[#F5F7FA]">
@@ -99,37 +96,13 @@ function TrainingTeacherCases() {
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
               <h1 className="text-gray-900">培训案例与教案沉淀</h1>
-              <p className="text-sm text-gray-500 mt-1">
-                把师傅经验、真实接待问题和优秀讲解沉淀成可复用的课件、题库和陪练脚本。
-              </p>
             </div>
-            <button
-              onClick={() => navigate("/workbench")}
-              className="px-3 py-2 rounded-lg bg-[#2F5FD0] text-sm text-white hover:bg-[#2550B8] transition-colors"
-            >
-              回培训工作台
-            </button>
           </div>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 space-y-4">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {[
-            { label: "案例总数", value: trainingCaseLibrary.length, helper: "来自带教师傅访谈", tone: "text-[#2F5FD0]", bg: "bg-blue-50 border-blue-100" },
-            { label: "可直接复用", value: reusableCount, helper: "可进课堂和陪练", tone: "text-[#16A34A]", bg: "bg-green-50 border-green-100" },
-            { label: "待补评分表", value: pendingCount, helper: "还需转成结构化标准", tone: "text-[#F59E0B]", bg: "bg-amber-50 border-amber-100" },
-            { label: "本周跟进", value: trainingFollowUpTasks.length, helper: "产品、题库、学员联动", tone: "text-[#DC2626]", bg: "bg-red-50 border-red-100" },
-          ].map((item) => (
-            <div key={item.label} className={`rounded-xl border px-4 py-3 ${item.bg}`}>
-              <p className="text-xs text-gray-500">{item.label}</p>
-              <p className={`text-2xl font-bold mt-1 ${item.tone}`}>{item.value}</p>
-              <p className="text-xs text-gray-500 mt-1">{item.helper}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex gap-1 rounded-xl bg-white p-1 shadow-sm overflow-x-auto hide-scrollbar">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 rounded-xl bg-white p-1 shadow-sm">
           {[
             { key: "library", label: "案例库" },
             { key: "method", label: "带教方法" },
@@ -139,7 +112,7 @@ function TrainingTeacherCases() {
             <button
               key={tab.key}
               onClick={() => setActiveView(tab.key as "library" | "method" | "scripts" | "review")}
-              className={`min-w-[108px] flex-1 rounded-lg px-3 py-2 text-sm transition-colors ${
+              className={`w-full rounded-lg px-3 py-2 text-sm transition-colors ${
                 activeView === tab.key ? "bg-[#2F5FD0] text-white" : "text-gray-600 hover:bg-gray-50"
               }`}
             >
@@ -263,47 +236,13 @@ function ContentOpsLegacy() {
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
               <h1 className="text-gray-900">社区运营工作台</h1>
-              <p className="text-sm text-gray-500 mt-1">
-                围绕资源开拓、运营过程、转化节点和异常风险，先让运营负责人看到问题，再进入明细处理。
-              </p>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              <button
-                onClick={() => navigate("/workbench/dashboard/risk")}
-                className="px-3 py-2 rounded-lg border border-red-100 bg-red-50 text-sm text-[#DC2626] hover:bg-red-100 transition-colors"
-              >
-                查看风险名单
-              </button>
-              <button
-                onClick={() => navigate("/workbench/dashboard/tasks")}
-                className="px-3 py-2 rounded-lg bg-[#2F5FD0] text-sm text-white hover:bg-[#2550B8] transition-colors"
-              >
-                进入运营任务
-              </button>
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 space-y-4">
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-          {summaryCards.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => navigate(opsDetailPath("metric", item.id))}
-              className={`rounded-xl border px-4 py-3 shadow-sm text-left hover:shadow-md hover:-translate-y-0.5 transition-all ${item.bg}`}
-            >
-              <div className={`text-2xl font-bold ${item.tone}`}>{item.value}</div>
-              <div className="text-sm text-gray-700 mt-1">{item.label}</div>
-              <div className="text-xs text-gray-500 mt-0.5 flex items-center justify-between gap-2">
-                <span>{item.helper}</span>
-                <ChevronRight size={13} className="text-gray-400" />
-              </div>
-            </button>
-          ))}
-        </div>
-
-        <div className="flex gap-1 rounded-xl bg-white p-1 shadow-sm overflow-x-auto hide-scrollbar">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1 rounded-xl bg-white p-1 shadow-sm">
           {[
             { key: "overview", label: "异常总览" },
             { key: "resource", label: "资源开拓" },
@@ -316,7 +255,7 @@ function ContentOpsLegacy() {
             <button
               key={tab.key}
               onClick={() => setActiveView(tab.key as OpsView)}
-              className={`min-w-[100px] flex-1 rounded-lg px-3 py-2 text-sm transition-colors ${
+              className={`w-full rounded-lg px-2 py-2 text-sm transition-colors ${
                 activeView === tab.key ? "bg-[#2F5FD0] text-white" : "text-gray-600 hover:bg-gray-50"
               }`}
             >
@@ -484,20 +423,6 @@ function ContentOpsLegacy() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <ClipboardList size={16} className="text-[#16A34A]" />
-                  <span className="text-sm font-medium text-gray-900">今日动作</span>
-                </div>
-                <div className="space-y-2">
-                  {["补青浦店资源缺口", "催临港星河湾群人数增长", "复盘嘉定云著添加微信动作"].map((item) => (
-                    <div key={item} className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600">
-                      <CheckCircle2 size={13} className="text-[#16A34A]" />
-                      {item}
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           </div>
         )}

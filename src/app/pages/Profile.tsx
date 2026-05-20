@@ -78,6 +78,7 @@ export default function Profile() {
   }
 
   const isStaff = currentIdentity === "staff";
+  const isStudent = currentIdentity === "student";
   const approvalMeta = getStaffApprovalStatusMeta(user.staffApprovalStatus);
   const latestApplication = user.applicationRecords[0];
   const canSwitchStaff = user.availableIdentities.includes("staff");
@@ -214,13 +215,13 @@ export default function Profile() {
   };
 
   const actionEntries = [
-    { icon: <Dumbbell size={16} className="text-purple-500" />, label: "我的陪练记录", path: "/learning/ai-practice" },
-    { icon: <BookOpen size={16} className="text-blue-500" />, label: "我的学习记录", path: "/learning" },
-    { icon: <TrendingUp size={16} className="text-green-500" />, label: "成长总览", path: "/learning/growth" },
+    { icon: <Dumbbell size={16} className="text-purple-500" />, label: "我的陪练记录", path: "/learning/ai-practice", studentOnly: true },
+    { icon: <BookOpen size={16} className="text-blue-500" />, label: "我的学习记录", path: "/learning", studentOnly: true },
+    { icon: <TrendingUp size={16} className="text-green-500" />, label: "成长总览", path: "/learning/growth", studentOnly: true },
     { icon: <Briefcase size={16} className="text-indigo-500" />, label: "转工作人员申请", path: "/profile/staff-transfer" },
     { icon: <Clock size={16} className="text-amber-500" />, label: "审批状态", path: "/profile/approval-status" },
     { icon: <Settings size={16} className="text-gray-500" />, label: "账号设置", path: "/profile/settings" },
-  ];
+  ].filter((item) => isStudent || !item.studentOnly);
 
   return (
     <div className="min-h-full bg-[#F5F7FA]">
@@ -259,17 +260,19 @@ export default function Profile() {
             </button>
           </div>
 
-          <div className="grid grid-cols-4 gap-2 mt-4">
-            {stats.map((stat) => (
-              <div key={stat.label} className="bg-white/10 rounded-xl px-2 py-2 text-center">
-                <div className="text-lg font-bold text-white">
-                  {stat.value}
-                  <span className="text-xs font-normal">{stat.unit}</span>
+          {isStudent && (
+            <div className="grid grid-cols-4 gap-2 mt-4">
+              {stats.map((stat) => (
+                <div key={stat.label} className="bg-white/10 rounded-xl px-2 py-2 text-center">
+                  <div className="text-lg font-bold text-white">
+                    {stat.value}
+                    <span className="text-xs font-normal">{stat.unit}</span>
+                  </div>
+                  <div className="text-xs text-white/50">{stat.label}</div>
                 </div>
-                <div className="text-xs text-white/50">{stat.label}</div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

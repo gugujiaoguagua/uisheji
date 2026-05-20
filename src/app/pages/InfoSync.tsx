@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import {
   AlertTriangle,
+  ArrowLeft,
   CheckCircle2,
   Clock,
   Download,
@@ -28,6 +29,7 @@ function CompanyProductSync() {
   const [selectedId, setSelectedId] = useState(trainingProductUpdates[0].id);
   const [confirmedIds, setConfirmedIds] = useState<string[]>([]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [mobileMode, setMobileMode] = useState<"list" | "detail">("list");
   const selectedUpdate = trainingProductUpdates.find((item) => item.id === selectedId) ?? trainingProductUpdates[0];
   const selectedConfirmed = confirmedIds.includes(selectedUpdate.id);
 
@@ -45,13 +47,16 @@ function CompanyProductSync() {
 
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-4">
         <div className="grid lg:grid-cols-5 gap-4">
-          <div className="lg:col-span-2 space-y-3">
+          <div className={`${mobileMode === "list" ? "block" : "hidden"} lg:block lg:col-span-2 space-y-3`}>
             {trainingProductUpdates.map((update) => {
               const isConfirmed = confirmedIds.includes(update.id);
               return (
                 <button
                   key={update.id}
-                  onClick={() => setSelectedId(update.id)}
+                  onClick={() => {
+                    setSelectedId(update.id);
+                    setMobileMode("detail");
+                  }}
                   className={`w-full text-left rounded-xl bg-white p-4 shadow-sm border transition-all hover:shadow-md ${
                     selectedUpdate.id === update.id ? "border-[#2F5FD0] ring-2 ring-[#D9E5FF]" : "border-transparent"
                   }`}
@@ -81,7 +86,15 @@ function CompanyProductSync() {
             })}
           </div>
 
-          <div className="lg:col-span-3 space-y-4">
+          <div className={`${mobileMode === "detail" ? "block" : "hidden"} lg:block lg:col-span-3 space-y-4`}>
+            <button
+              type="button"
+              onClick={() => setMobileMode("list")}
+              className="lg:hidden inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 shadow-sm"
+            >
+              <ArrowLeft size={15} /> 返回产品列表
+            </button>
+
             <div className="rounded-xl bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>

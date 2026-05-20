@@ -1,10 +1,8 @@
 import { useNavigate } from "react-router";
-import { ArrowLeft, BookOpen, Briefcase, CheckCircle2, ChevronRight, Clock } from "lucide-react";
-import { ApprovalStatusCard } from "../components/BusinessBlocks";
+import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
 import { GlobalStateCard, type GlobalStateTone } from "../components/GlobalStateCard";
 
 import { getIdentityLabel, getStaffApprovalStatusMeta, useApp } from "../context/AppContext";
-import { appActionClass, getApprovalStatusToneClass } from "../lib/visualTokens";
 
 
 export default function ApprovalStatus() {
@@ -70,35 +68,6 @@ export default function ApprovalStatus() {
         onClick: () => navigate("/profile/settings"),
       };
 
-  const timeline = [
-    {
-      title: "达成转岗资格",
-      time: latestApplication?.submittedAt ?? "-",
-      desc: "完成必修课、考核与陪练要求，满足身份升级前置条件。",
-      done: true,
-    },
-    {
-      title: "发起转工作人员申请",
-      time: latestApplication?.submittedAt ?? "-",
-      desc: "申请在统一账号体系内发起，不会丢失历史学习记录。",
-      done: Boolean(latestApplication),
-    },
-    {
-      title: "培训负责人审批",
-      time: latestApplication?.updatedAt ?? "待审批",
-      desc: latestApplication ? `审批人：${latestApplication.reviewer}` : "等待审批人处理。",
-      done: approved,
-    },
-    {
-      title: "主身份变更并保留学习能力",
-      time: approved ? user.staffApprovalUpdatedAt : "待生效",
-      desc: approved
-        ? "工作人员权限已开通，同时继续保留学习中心、考核记录与成长档案。"
-        : "审批完成后将自动切换主身份，但不影响学习能力。",
-      done: approved,
-    },
-  ];
-
   return (
     <div className="min-h-full bg-[#F5F7FA]">
       <div className="bg-white border-b border-gray-200 px-4 md:px-6 pt-4 pb-4">
@@ -133,68 +102,22 @@ export default function ApprovalStatus() {
           ]}
         />
 
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="md:col-span-2 bg-white rounded-2xl shadow-sm p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <Clock size={15} className="text-[#2F5FD0]" />
-              <span className="text-sm font-medium text-gray-900">审批时间线</span>
-            </div>
-            <div className="space-y-4">
-              {timeline.map((item, index) => (
-                <div key={item.title} className="flex items-start gap-3">
-                  <div className="flex flex-col items-center pt-0.5">
-                    <div className={`flex h-6 w-6 items-center justify-center rounded-full ${item.done ? "bg-[#16A34A]" : "bg-gray-200"}`}>
-                      {item.done ? <CheckCircle2 size={14} className="text-white" /> : <span className="text-xs text-gray-500">{index + 1}</span>}
-                    </div>
-                    {index < timeline.length - 1 && <div className="mt-1 h-12 w-px bg-gray-200" />}
-                  </div>
-                  <div className="flex-1 rounded-xl border border-gray-200 bg-[#FAFBFC] px-4 py-3">
-                    <div className="flex items-center justify-between gap-3 flex-wrap">
-                      <p className="text-sm font-medium text-gray-900">{item.title}</p>
-                      <span className="text-xs text-gray-400">{item.time}</span>
-                    </div>
-                    <p className="text-sm text-gray-500 mt-1 leading-relaxed">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+        <div className="bg-white rounded-2xl shadow-sm p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <BookOpen size={15} className="text-[#2F5FD0]" />
+            <span className="text-sm font-medium text-gray-900">学习能力保留说明</span>
           </div>
-
-          <div className="space-y-4">
-            {latestApplication && (
-              <ApprovalStatusCard
-                title="申请摘要"
-                value={latestApplication.title}
-                description={latestApplication.summary}
-                badgeText={approvalMeta.shortLabel}
-                badgeClassName={approved ? "bg-green-100 text-[#15803D]" : user.staffApprovalStatus === "rejected" ? "bg-red-100 text-[#DC2626]" : "bg-amber-100 text-[#B45309]"}
-                meta={[
-                  { label: "提交时间", value: latestApplication.submittedAt },
-                  { label: "审批时间", value: latestApplication.updatedAt },
-                  { label: "审批人", value: latestApplication.reviewer },
-                ]}
-              />
-            )}
-
-
-            <div className="bg-white rounded-2xl shadow-sm p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <BookOpen size={15} className="text-[#2F5FD0]" />
-                <span className="text-sm font-medium text-gray-900">学习能力保留说明</span>
+          <div className="grid md:grid-cols-2 gap-2">
+            {[
+              "学习中心继续可用",
+              "历史课程与考核记录继续保留",
+              "成长总览与补训动作不会丢失",
+              "只是在首页推荐和权限深度上切到工作人员主身份",
+            ].map((item) => (
+              <div key={item} className="rounded-xl border border-gray-200 bg-[#F8FAFC] px-3 py-2.5 text-sm text-gray-600">
+                {item}
               </div>
-              <div className="space-y-2">
-                {[
-                  "学习中心继续可用",
-                  "历史课程与考核记录继续保留",
-                  "成长总览与补训动作不会丢失",
-                  "只是在首页推荐和权限深度上切到工作人员主身份",
-                ].map((item) => (
-                  <div key={item} className="rounded-xl border border-gray-200 bg-[#F8FAFC] px-3 py-2.5 text-sm text-gray-600">
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 

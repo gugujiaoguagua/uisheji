@@ -22,7 +22,6 @@ import {
   closureSteps,
   opsDetailPath,
   personAlerts,
-  processMetrics,
   riskItems,
   teamHealth,
 } from "../data/communityOpsData";
@@ -73,16 +72,7 @@ function TrainingTeacherDashboard() {
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
               <h1 className="text-white mb-1">学员培养看板</h1>
-              <p className="text-white/70 text-sm leading-relaxed">
-                培训老师第一眼看到每个学员学到哪、卡在哪里、今天要跟进什么。
-              </p>
             </div>
-            <button
-              onClick={() => navigate("/workbench")}
-              className="px-3 py-1.5 rounded-lg bg-white text-[#1E2A3A] text-xs transition-colors"
-            >
-              回培训工作台
-            </button>
           </div>
         </div>
       </div>
@@ -93,7 +83,6 @@ function TrainingTeacherDashboard() {
               <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
                 <div>
                   <h2 className="text-sm font-medium text-gray-900">{selectedStudent ? "学员详情看板" : "所有学员综合"}</h2>
-                  <p className="text-xs text-gray-500 mt-1">{selectedStudent ? "返回后可继续按班级或姓名查询其它学员。" : "先选班级，也可以按姓名查询；红色学员优先展示。"}</p>
                 </div>
                 {selectedStudent && (
                   <button
@@ -106,7 +95,7 @@ function TrainingTeacherDashboard() {
               </div>
               {!selectedStudent && (
                 <div className="space-y-3">
-                  <div className="flex gap-2 overflow-x-auto hide-scrollbar">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {cohortOptions.map((cohort) => (
                       <button
                         key={cohort}
@@ -114,7 +103,7 @@ function TrainingTeacherDashboard() {
                           setSelectedCohort(cohort);
                           setSelectedStudentId(null);
                         }}
-                        className={`shrink-0 rounded-xl border px-3 py-2 text-sm transition-colors ${
+                        className={`w-full rounded-xl border px-3 py-2 text-sm transition-colors ${
                           selectedCohort === cohort
                             ? "border-[#2F5FD0] bg-[#2F5FD0] text-white"
                             : "border-gray-200 bg-[#FAFBFC] text-gray-600 hover:border-[#D9E5FF]"
@@ -297,11 +286,6 @@ function DashboardLegacy() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"risk" | "nodes" | "team">("risk");
 
-  const highRiskCount = riskItems.filter((item) => item.level === "high").length + personAlerts.filter((item) => item.score < 50).length;
-  const warningCount = riskItems.filter((item) => item.level === "medium").length + processMetrics.filter((item) => item.tone.includes("F59E0B")).length;
-  const redMetricCount = processMetrics.filter((item) => item.tone.includes("DC2626")).length;
-  const averageHealth = Math.round(teamHealth.reduce((sum, item) => sum + item.health, 0) / teamHealth.length);
-
   return (
     <div className="min-h-full bg-[#F5F7FA]">
       <div className="bg-[#1E2A3A] px-4 md:px-6 pt-4 pb-10">
@@ -309,42 +293,13 @@ function DashboardLegacy() {
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
               <h1 className="text-white mb-1">社区运营异常看板</h1>
-              <p className="text-white/70 text-sm leading-relaxed">第一屏先暴露异常、口径问题和责任对象，再进入风险名单或任务闭环。</p>
             </div>
-            <div className="flex gap-2 flex-wrap">
-              <button
-                onClick={() => navigate("/workbench/content-ops")}
-                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs transition-colors"
-              >
-                社区运营工作台
-              </button>
-              <button
-                onClick={() => navigate("/workbench/dashboard/business")}
-                className="px-3 py-1.5 rounded-lg bg-white text-[#1E2A3A] text-xs transition-colors"
-              >
-                打开运营总览
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
-            {[
-              { label: "红色风险", value: `${highRiskCount}`, color: "text-red-300", bg: "bg-red-500/20 border border-red-400/30" },
-              { label: "黄色预警", value: `${warningCount}`, color: "text-amber-300", bg: "bg-amber-500/20 border border-amber-400/30" },
-              { label: "红色指标", value: `${redMetricCount}`, color: "text-red-200", bg: "bg-white/10 border border-white/10" },
-              { label: "团队健康均值", value: `${averageHealth}`, color: "text-white", bg: "bg-white/10 border border-white/10" },
-            ].map((s) => (
-              <div key={s.label} className={`rounded-lg px-3 py-3 text-center ${s.bg}`}>
-                <div className={`text-xl font-bold ${s.color}`}>{s.value}</div>
-                <div className="text-white/60 text-sm mt-1">{s.label}</div>
-              </div>
-            ))}
           </div>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 md:px-6 -mt-4">
-        <div className="flex gap-1 bg-white rounded-xl p-1 shadow-sm mb-4 overflow-x-auto hide-scrollbar">
+        <div className="grid grid-cols-3 gap-1 bg-white rounded-xl p-1 shadow-sm mb-4">
           {[
             { key: "risk", label: "风险对象 & 动作" },
             { key: "nodes", label: "指标规则 & 闭环" },
@@ -353,7 +308,7 @@ function DashboardLegacy() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as "risk" | "nodes" | "team")}
-              className={`min-w-[120px] flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`w-full min-h-[44px] px-2 py-2 rounded-lg text-xs sm:text-sm font-medium leading-snug transition-colors ${
                 activeTab === tab.key ? "bg-[#2F5FD0] text-white" : "text-gray-600 hover:text-gray-800"
               }`}
             >

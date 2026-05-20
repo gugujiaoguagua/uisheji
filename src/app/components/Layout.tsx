@@ -111,12 +111,19 @@ export function Layout() {
   const [showIdentityMenu, setShowIdentityMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const isStaff = currentIdentity === "staff";
 
   useEffect(() => {
     if (!isLoggedIn) {
       navigate("/login");
     }
   }, [isLoggedIn, navigate]);
+
+  useEffect(() => {
+    if (isLoggedIn && !isStaff && location.pathname.startsWith("/workbench")) {
+      navigate("/learning", { replace: true });
+    }
+  }, [isLoggedIn, isStaff, location.pathname, navigate]);
 
   const activeNav = getActiveNav(location.pathname);
 
@@ -130,7 +137,6 @@ export function Layout() {
     }
   };
 
-  const isStaff = currentIdentity === "staff";
   const selectedStaffRole = user?.staffRole ?? "training_teacher";
   const isTrainingTeacher = isStaff && selectedStaffRole === "training_teacher";
   const isOpsStaff = isStaff && selectedStaffRole === "ops";
@@ -141,7 +147,7 @@ export function Layout() {
   const staffRoleMeta = getStaffRoleMeta(selectedStaffRole);
   const approvalMeta = user ? getStaffApprovalStatusMeta(user.staffApprovalStatus) : null;
   const identityChoices = user?.availableIdentities ?? [];
-  const effectiveNavItems = isTrainingTeacher
+  const roleNavItems = isTrainingTeacher
     ? navItems.map((item) => {
         if (item.key !== "workbench") return item;
         return {
@@ -212,6 +218,7 @@ export function Layout() {
                 };
               })
     : navItems;
+  const effectiveNavItems = isStaff ? roleNavItems : roleNavItems.filter((item) => item.key !== "workbench");
 
   return (
     <div className="flex h-screen bg-[#F5F7FA] overflow-hidden">

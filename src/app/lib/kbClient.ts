@@ -32,8 +32,10 @@ export type KbQueryPayload = {
   kb_snapshot_id?: string;
 };
 
+const kbApiBase = (import.meta.env.VITE_KB_API_BASE || "").replace(/\/$/, "");
+
 export async function queryKnowledgeBase(payload: KbQueryPayload): Promise<KbQueryResponse> {
-  const response = await fetch("/api/kb/query", {
+  const response = await fetch(`${kbApiBase}/api/kb/query`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -49,7 +51,7 @@ export async function queryKnowledgeBase(payload: KbQueryPayload): Promise<KbQue
 }
 
 export async function submitKnowledgeFeedback(payload: Record<string, unknown>) {
-  const response = await fetch("/api/kb/feedback", {
+  const response = await fetch(`${kbApiBase}/api/kb/feedback`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

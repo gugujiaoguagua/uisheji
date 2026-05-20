@@ -74,13 +74,13 @@ const learningSectionVisibility = {
 export default function Learning() {
 
   const [searchParams] = useSearchParams();
+  const { user, currentIdentity } = useApp();
   const [activeCategory, setActiveCategory] = useState("全部");
   const [searchQuery, setSearchQuery] = useState(searchParams.get("keyword") || "");
   const [showOnlyUpdated, setShowOnlyUpdated] = useState(false);
-  const [isLearningPathsCollapsed, setIsLearningPathsCollapsed] = useState(false);
+  const [isLearningPathsCollapsed, setIsLearningPathsCollapsed] = useState(() => currentIdentity === "staff");
 
   const navigate = useNavigate();
-  const { user, currentIdentity } = useApp();
   const selectedLearnerRole = user?.learnerRole ?? "sales";
   const learnerRoleMeta = getLearnerRoleMeta(selectedLearnerRole);
   const isStudentView = currentIdentity === "student";
@@ -154,6 +154,10 @@ export default function Learning() {
     if (keyword) setActiveCategory("全部");
   }, [searchParams]);
 
+  useEffect(() => {
+    setIsLearningPathsCollapsed(currentIdentity === "staff");
+  }, [currentIdentity]);
+
   return (
     <div className="min-h-full bg-[#F5F7FA] overflow-x-hidden">
       <div className="bg-white border-b border-gray-200 px-3 sm:px-4 md:px-6 pt-4 pb-4">
@@ -168,18 +172,16 @@ export default function Learning() {
                   </span>
                 )}
               </div>
-              {(!isStudentView || showStudentHeaderDescription) && (
+              {isStudentView && showStudentHeaderDescription && (
                 <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-                  {isStudentView
-                    ? `默认只显示${learnerRoleMeta.label}的路径和课程；如需学习其他身份课程，可直接搜索课程名或关键词。`
-                    : "按学习闭环组织：路径推荐、课程学习、记录沉淀、考核验证与补训再学"}
+                  默认只显示{learnerRoleMeta.label}的路径和课程；如需学习其他身份课程，可直接搜索课程名或关键词。
                 </p>
               )}
 
             </div>
           </div>
 
-          {(!isStudentView || showStudentOverviewStats) && (
+          {isStudentView && showStudentOverviewStats && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
               <div className="bg-red-50 border border-red-100 rounded-lg px-3 py-3">
                 <div className="flex items-center gap-1.5">
