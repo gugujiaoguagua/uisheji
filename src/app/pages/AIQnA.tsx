@@ -162,6 +162,7 @@ export default function AIQnA() {
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [expandedDetails, setExpandedDetails] = useState<string[]>([]);
   const [expandedSources, setExpandedSources] = useState<string[]>([]);
   const [submittedGapIds, setSubmittedGapIds] = useState<string[]>([]);
   const [activeGapMessageId, setActiveGapMessageId] = useState<string | null>(null);
@@ -209,6 +210,12 @@ export default function AIQnA() {
 
   const toggleSources = (msgId: string) => {
     setExpandedSources((prev) =>
+      prev.includes(msgId) ? prev.filter((id) => id !== msgId) : [...prev, msgId]
+    );
+  };
+
+  const toggleDetails = (msgId: string) => {
+    setExpandedDetails((prev) =>
       prev.includes(msgId) ? prev.filter((id) => id !== msgId) : [...prev, msgId]
     );
   };
@@ -264,6 +271,7 @@ export default function AIQnA() {
         <div className="max-w-3xl mx-auto space-y-4">
           {messages.map((msg) => {
             const isGapSubmitted = submittedGapIds.includes(msg.id);
+            const isDetailExpanded = expandedDetails.includes(msg.id);
 
             return (
               <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
@@ -297,24 +305,38 @@ export default function AIQnA() {
                       )}
 
                       {msg.content !== messages[0].content && (
-                        <div className="bg-white rounded-xl px-4 py-3 shadow-sm">
-                          <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
-                            <p className="text-xs text-gray-400">详细解释</p>
+                        <div className="bg-white rounded-xl overflow-hidden shadow-sm">
+                          <button
+                            type="button"
+                            onClick={() => toggleDetails(msg.id)}
+                            className="w-full flex items-center justify-between gap-2 px-4 py-2.5 hover:bg-gray-50 transition-colors"
+                            aria-expanded={isDetailExpanded}
+                          >
+                            <span className="text-xs text-gray-500">详细解释</span>
                             {msg.answerState === "needs-review" && (
                               <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs text-[#B45309]">
                                 <AlertTriangle size={11} /> 来源不足，建议回流补充
                               </span>
                             )}
-                          </div>
-                          <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                            {msg.content.split("**").map((part, i) =>
-                              i % 2 === 1 ? (
-                                <strong key={i} className="font-medium text-gray-900">{part}</strong>
+                            <span className="ml-auto">
+                              {isDetailExpanded ? (
+                                <ChevronUp size={13} className="text-gray-400" />
                               ) : (
-                                <span key={i}>{part}</span>
-                              )
-                            )}
-                          </div>
+                                <ChevronDown size={13} className="text-gray-400" />
+                              )}
+                            </span>
+                          </button>
+                          {isDetailExpanded && (
+                            <div className="border-t border-gray-100 px-4 py-3 text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+                              {msg.content.split("**").map((part, i) =>
+                                i % 2 === 1 ? (
+                                  <strong key={i} className="font-medium text-gray-900">{part}</strong>
+                                ) : (
+                                  <span key={i}>{part}</span>
+                                )
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
 

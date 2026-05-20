@@ -18,6 +18,18 @@ function figmaAssetResolver() {
 }
 
 export default defineConfig({
+  server: {
+    allowedHosts: [
+      'zhiyou.shayuguagua.dpdns.org',
+      'shayuguagua.dpdns.org',
+    ],
+  },
+  preview: {
+    allowedHosts: [
+      'zhiyou.shayuguagua.dpdns.org',
+      'shayuguagua.dpdns.org',
+    ],
+  },
   plugins: [
     figmaAssetResolver(),
     kbDevServer(),

@@ -1,111 +1,123 @@
+import { lazy, Suspense, type ComponentType } from "react";
 import { createBrowserRouter, Navigate } from "react-router";
-import Login from "./pages/Login";
-import { Layout } from "./components/Layout";
-import Home from "./pages/Home";
-import Learning from "./pages/Learning";
-import CourseDetail from "./pages/CourseDetail";
-import AIQnA from "./pages/AIQnA";
-import AIPractice from "./pages/AIPractice";
-import Assessment from "./pages/Assessment";
-import Growth from "./pages/Growth";
-import DesignStandards from "./pages/DesignStandards";
-import DesignStandardsDetail from "./pages/DesignStandardsDetail";
-import WeakAreaDetail from "./pages/WeakAreaDetail";
-import RetrainTasks from "./pages/RetrainTasks";
-import ReviewResult from "./pages/ReviewResult";
-import Workbench from "./pages/Workbench";
-import InfoSync from "./pages/InfoSync";
-import InfoSyncDetail from "./pages/InfoSyncDetail";
-import ContentOps from "./pages/ContentOps";
-import ContentOpsDetail from "./pages/ContentOpsDetail";
-import VersionManagement from "./pages/VersionManagement";
-import Collab from "./pages/Collab";
-import RequestHandoff from "./pages/RequestHandoff";
-import ReviewPreparation from "./pages/ReviewPreparation";
-import ScoreFeedback from "./pages/ScoreFeedback";
-import OrderReview from "./pages/OrderReview";
-import OrderPreparation from "./pages/OrderPreparation";
-import IssueAnnotation from "./pages/IssueAnnotation";
-import ProcessValidation from "./pages/ProcessValidation";
-import AfterSaleAttribution from "./pages/AfterSaleAttribution";
-import TrainingFlowback from "./pages/TrainingFlowback";
-import Dashboard from "./pages/Dashboard";
-import BusinessOverview from "./pages/BusinessOverview";
-import RiskRoster from "./pages/RiskRoster";
-import CoachTasks from "./pages/CoachTasks";
-import HistoryTimeline from "./pages/HistoryTimeline";
-import UpdateRecords from "./pages/UpdateRecords";
-import ReviewRecords from "./pages/ReviewRecords";
-import SalesFollowup from "./pages/SalesFollowup";
-import RetestMakeup from "./pages/RetestMakeup";
-import StateStandards from "./pages/StateStandards";
-import ProductBlueprint from "./pages/ProductBlueprint";
-import DualEndAcceptance from "./pages/DualEndAcceptance";
-import ApprovalCenter from "./pages/ApprovalCenter";
-import Messages from "./pages/Messages";
-import Profile from "./pages/Profile";
-import Settings from "./pages/Settings";
-import StaffTransfer from "./pages/StaffTransfer";
-import ApprovalStatus from "./pages/ApprovalStatus";
 import RouteErrorFallback from "./pages/RouteErrorFallback";
+
+const Login = lazy(() => import("./pages/Login"));
+const Layout = lazy(() => import("./components/Layout").then((module) => ({ default: module.Layout })));
+const Home = lazy(() => import("./pages/Home"));
+const Learning = lazy(() => import("./pages/Learning"));
+const CourseDetail = lazy(() => import("./pages/CourseDetail"));
+const AIQnA = lazy(() => import("./pages/AIQnA"));
+const AIPractice = lazy(() => import("./pages/AIPractice"));
+const Assessment = lazy(() => import("./pages/Assessment"));
+const Growth = lazy(() => import("./pages/Growth"));
+const DesignStandards = lazy(() => import("./pages/DesignStandards"));
+const DesignStandardsDetail = lazy(() => import("./pages/DesignStandardsDetail"));
+const WeakAreaDetail = lazy(() => import("./pages/WeakAreaDetail"));
+const RetrainTasks = lazy(() => import("./pages/RetrainTasks"));
+const ReviewResult = lazy(() => import("./pages/ReviewResult"));
+const Workbench = lazy(() => import("./pages/Workbench"));
+const InfoSync = lazy(() => import("./pages/InfoSync"));
+const InfoSyncDetail = lazy(() => import("./pages/InfoSyncDetail"));
+const ContentOps = lazy(() => import("./pages/ContentOps"));
+const ContentOpsDetail = lazy(() => import("./pages/ContentOpsDetail"));
+const VersionManagement = lazy(() => import("./pages/VersionManagement"));
+const Collab = lazy(() => import("./pages/Collab"));
+const RequestHandoff = lazy(() => import("./pages/RequestHandoff"));
+const ReviewPreparation = lazy(() => import("./pages/ReviewPreparation"));
+const ScoreFeedback = lazy(() => import("./pages/ScoreFeedback"));
+const OrderReview = lazy(() => import("./pages/OrderReview"));
+const OrderPreparation = lazy(() => import("./pages/OrderPreparation"));
+const IssueAnnotation = lazy(() => import("./pages/IssueAnnotation"));
+const ProcessValidation = lazy(() => import("./pages/ProcessValidation"));
+const AfterSaleAttribution = lazy(() => import("./pages/AfterSaleAttribution"));
+const TrainingFlowback = lazy(() => import("./pages/TrainingFlowback"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const BusinessOverview = lazy(() => import("./pages/BusinessOverview"));
+const RiskRoster = lazy(() => import("./pages/RiskRoster"));
+const CoachTasks = lazy(() => import("./pages/CoachTasks"));
+const HistoryTimeline = lazy(() => import("./pages/HistoryTimeline"));
+const UpdateRecords = lazy(() => import("./pages/UpdateRecords"));
+const ReviewRecords = lazy(() => import("./pages/ReviewRecords"));
+const SalesFollowup = lazy(() => import("./pages/SalesFollowup"));
+const RetestMakeup = lazy(() => import("./pages/RetestMakeup"));
+const StateStandards = lazy(() => import("./pages/StateStandards"));
+const ProductBlueprint = lazy(() => import("./pages/ProductBlueprint"));
+const DualEndAcceptance = lazy(() => import("./pages/DualEndAcceptance"));
+const ApprovalCenter = lazy(() => import("./pages/ApprovalCenter"));
+const Messages = lazy(() => import("./pages/Messages"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Settings = lazy(() => import("./pages/Settings"));
+const StaffTransfer = lazy(() => import("./pages/StaffTransfer"));
+const ApprovalStatus = lazy(() => import("./pages/ApprovalStatus"));
+
+function withSuspense(Page: ComponentType) {
+  return function SuspendedRoute() {
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-[#F5F7FA]" />}>
+        <Page />
+      </Suspense>
+    );
+  };
+}
 
 export const router = createBrowserRouter([
   {
     path: "/login",
-    Component: Login,
+    Component: withSuspense(Login),
     errorElement: <RouteErrorFallback />,
   },
   {
     path: "/",
-    Component: Layout,
+    Component: withSuspense(Layout),
     errorElement: <RouteErrorFallback />,
     children: [
-      { index: true, Component: Home },
-      { path: "learning", Component: Learning },
-      { path: "learning/course/:id", Component: CourseDetail },
-      { path: "learning/ai-qna", Component: AIQnA },
-      { path: "learning/ai-practice", Component: AIPractice },
-      { path: "learning/assessment", Component: Assessment },
-      { path: "learning/growth", Component: Growth },
-      { path: "learning/design-standards", Component: DesignStandards },
-      { path: "learning/design-standards/:topicId", Component: DesignStandardsDetail },
-      { path: "learning/growth/weak-area/:id", Component: WeakAreaDetail },
-      { path: "learning/growth/retrain", Component: RetrainTasks },
-      { path: "learning/growth/review-result", Component: ReviewResult },
-      { path: "learning/growth/retest-makeup", Component: RetestMakeup },
-      { path: "workbench", Component: Workbench },
-      { path: "workbench/history", Component: HistoryTimeline },
-      { path: "workbench/info-sync", Component: InfoSync },
-      { path: "workbench/info-sync/update/:id", Component: InfoSyncDetail },
-      { path: "workbench/info-sync/records", Component: UpdateRecords },
-      { path: "workbench/content-ops", Component: ContentOps },
-      { path: "workbench/content-ops/version/:id", Component: VersionManagement },
-      { path: "workbench/content-ops/:detailType/:id", Component: ContentOpsDetail },
-      { path: "workbench/collab", Component: Collab },
-      { path: "workbench/collab/request/:id", Component: RequestHandoff },
-      { path: "workbench/collab/review/:id", Component: ReviewPreparation },
-      { path: "workbench/collab/score/:id", Component: ScoreFeedback },
-      { path: "workbench/collab/records", Component: ReviewRecords },
-      { path: "workbench/sales-followup", Component: SalesFollowup },
-      { path: "workbench/order-review", Component: OrderReview },
-      { path: "workbench/order-review/preparation/:id", Component: OrderPreparation },
-      { path: "workbench/order-review/annotation/:id", Component: IssueAnnotation },
-      { path: "workbench/order-review/validation/:id", Component: ProcessValidation },
-      { path: "workbench/order-review/attribution/:id", Component: AfterSaleAttribution },
-      { path: "workbench/order-review/flowback/:id", Component: TrainingFlowback },
-      { path: "workbench/blueprint", Component: ProductBlueprint },
-      { path: "workbench/dual-end-acceptance", Component: DualEndAcceptance },
-      { path: "workbench/approvals", Component: ApprovalCenter },
-      { path: "workbench/dashboard", Component: Dashboard },
-      { path: "workbench/dashboard/business", Component: BusinessOverview },
-      { path: "workbench/dashboard/risk", Component: RiskRoster },
-      { path: "workbench/dashboard/tasks", Component: CoachTasks },
-      { path: "workbench/state-standards", Component: StateStandards },
-      { path: "messages", Component: Messages },
-      { path: "profile", Component: Profile },
-      { path: "profile/settings", Component: Settings },
-      { path: "profile/staff-transfer", Component: StaffTransfer },
-      { path: "profile/approval-status", Component: ApprovalStatus },
+      { index: true, Component: withSuspense(Home) },
+      { path: "learning", Component: withSuspense(Learning) },
+      { path: "learning/course/:id", Component: withSuspense(CourseDetail) },
+      { path: "learning/ai-qna", Component: withSuspense(AIQnA) },
+      { path: "learning/ai-practice", Component: withSuspense(AIPractice) },
+      { path: "learning/assessment", Component: withSuspense(Assessment) },
+      { path: "learning/growth", Component: withSuspense(Growth) },
+      { path: "learning/design-standards", Component: withSuspense(DesignStandards) },
+      { path: "learning/design-standards/:topicId", Component: withSuspense(DesignStandardsDetail) },
+      { path: "learning/growth/weak-area/:id", Component: withSuspense(WeakAreaDetail) },
+      { path: "learning/growth/retrain", Component: withSuspense(RetrainTasks) },
+      { path: "learning/growth/review-result", Component: withSuspense(ReviewResult) },
+      { path: "learning/growth/retest-makeup", Component: withSuspense(RetestMakeup) },
+      { path: "workbench", Component: withSuspense(Workbench) },
+      { path: "workbench/history", Component: withSuspense(HistoryTimeline) },
+      { path: "workbench/info-sync", Component: withSuspense(InfoSync) },
+      { path: "workbench/info-sync/update/:id", Component: withSuspense(InfoSyncDetail) },
+      { path: "workbench/info-sync/records", Component: withSuspense(UpdateRecords) },
+      { path: "workbench/content-ops", Component: withSuspense(ContentOps) },
+      { path: "workbench/content-ops/version/:id", Component: withSuspense(VersionManagement) },
+      { path: "workbench/content-ops/:detailType/:id", Component: withSuspense(ContentOpsDetail) },
+      { path: "workbench/collab", Component: withSuspense(Collab) },
+      { path: "workbench/collab/request/:id", Component: withSuspense(RequestHandoff) },
+      { path: "workbench/collab/review/:id", Component: withSuspense(ReviewPreparation) },
+      { path: "workbench/collab/score/:id", Component: withSuspense(ScoreFeedback) },
+      { path: "workbench/collab/records", Component: withSuspense(ReviewRecords) },
+      { path: "workbench/sales-followup", Component: withSuspense(SalesFollowup) },
+      { path: "workbench/order-review", Component: withSuspense(OrderReview) },
+      { path: "workbench/order-review/preparation/:id", Component: withSuspense(OrderPreparation) },
+      { path: "workbench/order-review/annotation/:id", Component: withSuspense(IssueAnnotation) },
+      { path: "workbench/order-review/validation/:id", Component: withSuspense(ProcessValidation) },
+      { path: "workbench/order-review/attribution/:id", Component: withSuspense(AfterSaleAttribution) },
+      { path: "workbench/order-review/flowback/:id", Component: withSuspense(TrainingFlowback) },
+      { path: "workbench/blueprint", Component: withSuspense(ProductBlueprint) },
+      { path: "workbench/dual-end-acceptance", Component: withSuspense(DualEndAcceptance) },
+      { path: "workbench/approvals", Component: withSuspense(ApprovalCenter) },
+      { path: "workbench/dashboard", Component: withSuspense(Dashboard) },
+      { path: "workbench/dashboard/business", Component: withSuspense(BusinessOverview) },
+      { path: "workbench/dashboard/risk", Component: withSuspense(RiskRoster) },
+      { path: "workbench/dashboard/tasks", Component: withSuspense(CoachTasks) },
+      { path: "workbench/state-standards", Component: withSuspense(StateStandards) },
+      { path: "messages", Component: withSuspense(Messages) },
+      { path: "profile", Component: withSuspense(Profile) },
+      { path: "profile/settings", Component: withSuspense(Settings) },
+      { path: "profile/staff-transfer", Component: withSuspense(StaffTransfer) },
+      { path: "profile/approval-status", Component: withSuspense(ApprovalStatus) },
     ],
   },
   {
