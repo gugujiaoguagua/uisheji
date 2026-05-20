@@ -582,58 +582,71 @@ async function queryKnowledgeBase(payload: KbQueryPayload) {
   };
 }
 
+type KbServer = {
+  middlewares: {
+    use: (path: string, handler: (req: IncomingMessage, res: ServerResponse) => void) => void;
+  };
+};
+
+function registerKbRoutes(server: KbServer) {
+  server.middlewares.use("/api/kb/health", (_req, res) => {
+    try {
+      sendJson(res, 200, getHealth());
+    } catch (error) {
+      sendJson(res, 500, { error: error instanceof Error ? error.message : "知识库健康检查失败" });
+    }
+  });
+
+  server.middlewares.use("/api/kb/query", async (req, res) => {
+    if (req.method === "OPTIONS") {
+      sendNoContent(res);
+      return;
+    }
+    if (req.method !== "POST") {
+      sendJson(res, 405, { error: "Method Not Allowed" });
+      return;
+    }
+
+    try {
+      const payload = await readJson(req);
+      sendJson(res, 200, await queryKnowledgeBase(payload));
+    } catch (error) {
+      sendJson(res, 500, { error: error instanceof Error ? error.message : "知识库查询失败" });
+    }
+  });
+
+  server.middlewares.use("/api/kb/feedback", async (req, res) => {
+    if (req.method === "OPTIONS") {
+      sendNoContent(res);
+      return;
+    }
+    if (req.method !== "POST") {
+      sendJson(res, 405, { error: "Method Not Allowed" });
+      return;
+    }
+
+    try {
+      const payload = await readJson(req);
+      sendJson(res, 200, {
+        accepted: true,
+        trace_id: `kb-feedback-${Date.now()}`,
+        received_question: payload.question || "",
+        note: "当前预览版只记录提交状态，不写回正式知识库目录。",
+      });
+    } catch (error) {
+      sendJson(res, 500, { error: error instanceof Error ? error.message : "反馈提交失败" });
+    }
+  });
+}
+
 export function kbDevServer() {
   return {
     name: "zhiyou-kb-dev-server",
-    configureServer(server: { middlewares: { use: (path: string, handler: (req: IncomingMessage, res: ServerResponse) => void) => void } }) {
-      server.middlewares.use("/api/kb/health", (_req, res) => {
-        try {
-          sendJson(res, 200, getHealth());
-        } catch (error) {
-          sendJson(res, 500, { error: error instanceof Error ? error.message : "知识库健康检查失败" });
-        }
-      });
-
-      server.middlewares.use("/api/kb/query", async (req, res) => {
-        if (req.method === "OPTIONS") {
-          sendNoContent(res);
-          return;
-        }
-        if (req.method !== "POST") {
-          sendJson(res, 405, { error: "Method Not Allowed" });
-          return;
-        }
-
-        try {
-          const payload = await readJson(req);
-          sendJson(res, 200, await queryKnowledgeBase(payload));
-        } catch (error) {
-          sendJson(res, 500, { error: error instanceof Error ? error.message : "知识库查询失败" });
-        }
-      });
-
-      server.middlewares.use("/api/kb/feedback", async (req, res) => {
-        if (req.method === "OPTIONS") {
-          sendNoContent(res);
-          return;
-        }
-        if (req.method !== "POST") {
-          sendJson(res, 405, { error: "Method Not Allowed" });
-          return;
-        }
-
-        try {
-          const payload = await readJson(req);
-          sendJson(res, 200, {
-            accepted: true,
-            trace_id: `kb-feedback-${Date.now()}`,
-            received_question: payload.question || "",
-            note: "当前预览版只记录提交状态，不写回正式知识库目录。",
-          });
-        } catch (error) {
-          sendJson(res, 500, { error: error instanceof Error ? error.message : "反馈提交失败" });
-        }
-      });
+    configureServer(server: KbServer) {
+      registerKbRoutes(server);
+    },
+    configurePreviewServer(server: KbServer) {
+      registerKbRoutes(server);
     },
   };
 }
