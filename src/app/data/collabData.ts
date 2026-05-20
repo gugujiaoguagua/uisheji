@@ -51,7 +51,7 @@ export type RequestItem = {
 export const requests: RequestItem[] = [
   {
     id: "r1",
-    title: "客户李总（泓信公司）卫浴改造需求",
+    title: "临港星河湾 · 李总卫浴改造单",
     customer: "李总",
     company: "泓信公司",
     salesperson: "陈伟",
@@ -124,7 +124,7 @@ export const requests: RequestItem[] = [
   },
   {
     id: "r2",
-    title: "客户张女士 新房装修 全屋瓷砖方案",
+    title: "青浦悦府 · 张女士全屋瓷砖单",
     customer: "张女士",
     company: "个人",
     salesperson: "李明",

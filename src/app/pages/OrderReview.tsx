@@ -449,7 +449,7 @@ export default function OrderReview() {
                             onClick={() => navigate("/workbench/content-ops")}
                             className="flex-1 min-w-[180px] py-2 border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl text-sm transition-colors"
                           >
-                            去培训运营执行回流
+                            去社区运营执行回流
                           </button>
                         </div>
                       </>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e9f5ff"/>
+      <stop offset="1" stop-color="#f7fbff"/>
+    </linearGradient>
+    <linearGradient id="coat" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2f80ed"/>
+      <stop offset="1" stop-color="#77b9ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="760" fill="url(#bg)"/>
+  <rect x="80" y="70" width="1040" height="620" rx="32" fill="#fff" stroke="#d8e7f5" stroke-width="3"/>
+  <rect x="130" y="130" width="550" height="420" rx="20" fill="#f1f5f9" stroke="#d6dde8" stroke-width="2"/>
+  <rect x="170" y="175" width="470" height="310" rx="12" fill="#dbeafe"/>
+  <path d="M190 455 C280 395, 370 510, 470 420 C545 352, 585 402, 625 365 L625 485 L190 485 Z" fill="url(#coat)" opacity="0.92"/>
+  <rect x="705" y="150" width="330" height="42" rx="21" fill="#dbeafe"/>
+  <rect x="705" y="225" width="400" height="24" rx="12" fill="#cbd5e1"/>
+  <rect x="705" y="275" width="360" height="24" rx="12" fill="#cbd5e1"/>
+  <rect x="705" y="325" width="320" height="24" rx="12" fill="#cbd5e1"/>
+  <rect x="705" y="395" width="170" height="54" rx="12" fill="#2563eb"/>
+  <rect x="900" y="395" width="170" height="54" rx="12" fill="#e0f2fe"/>
+  <text x="160" y="620" font-family="Arial, sans-serif" font-size="40" fill="#0f172a" font-weight="700">卫浴区防水施工示意</text>
+  <text x="705" y="181" font-family="Arial, sans-serif" font-size="24" fill="#1d4ed8" font-weight="700">v3.1 厚度与禁用材料</text>
+  <text x="725" y="430" font-family="Arial, sans-serif" font-size="20" fill="#fff">工艺重点</text>
+  <text x="930" y="430" font-family="Arial, sans-serif" font-size="20" fill="#1d4ed8">现场图</text>
+</svg>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8fafc"/>
+      <stop offset="1" stop-color="#eef6ff"/>
+    </linearGradient>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f5f2ec"/>
+      <stop offset="1" stop-color="#c9c2b8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="760" fill="url(#bg)"/>
+  <rect x="100" y="85" width="1000" height="590" rx="34" fill="#fff" stroke="#d9e2ec" stroke-width="3"/>
+  <rect x="165" y="150" width="460" height="460" rx="22" fill="url(#tile)" stroke="#b8afa3" stroke-width="2"/>
+  <path d="M210 225 C315 170, 420 290, 565 210" stroke="#f8fafc" stroke-width="18" fill="none" opacity="0.65"/>
+  <path d="M205 405 C330 340, 440 475, 580 390" stroke="#9ca3af" stroke-width="10" fill="none" opacity="0.5"/>
+  <path d="M260 535 C360 450, 455 560, 575 500" stroke="#fff7ed" stroke-width="16" fill="none" opacity="0.8"/>
+  <text x="690" y="205" font-family="Arial, sans-serif" font-size="38" fill="#0f172a" font-weight="700">云岚石·暖冬系列</text>
+  <text x="690" y="260" font-family="Arial, sans-serif" font-size="24" fill="#475569">R10 防滑系数 / 湿区适用规格</text>
+  <rect x="690" y="325" width="150" height="56" rx="14" fill="#2563eb"/>
+  <rect x="860" y="325" width="150" height="56" rx="14" fill="#ecfeff"/>
+  <rect x="690" y="425" width="340" height="22" rx="11" fill="#cbd5e1"/>
+  <rect x="690" y="470" width="300" height="22" rx="11" fill="#cbd5e1"/>
+  <rect x="690" y="515" width="360" height="22" rx="11" fill="#cbd5e1"/>
+  <text x="724" y="361" font-family="Arial, sans-serif" font-size="20" fill="#fff">新品参数</text>
+  <text x="900" y="361" font-family="Arial, sans-serif" font-size="20" fill="#0891b2">湿区</text>
+</svg>

@@ -1,16 +1,23 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import {
-  AlertTriangle,
-  ArrowLeft,
-  CheckCircle2,
+  ChevronRight,
   Clock3,
   FileText,
-  Star,
+  Search,
   Users,
+  X,
 } from "lucide-react";
-import { TimelineFeed } from "../components/TimelineFeed";
-import { reviewRecords, type RecordTone } from "../data/workflowData";
+import { reviewRecords, type RecordTone, type ReviewRecord } from "../data/workflowData";
+
+type FilterKey = "all" | RecordTone;
+
+const filters: { key: FilterKey; label: string }[] = [
+  { key: "all", label: "全部会审" },
+  { key: "pending", label: "待补记录" },
+  { key: "done", label: "已沉淀" },
+  { key: "risk", label: "需收口" },
+];
 
 function toneMeta(tone: RecordTone) {
   if (tone === "done") return "bg-green-100 text-[#15803D]";
@@ -24,191 +31,153 @@ function toneLabel(tone: RecordTone) {
   return "待补记录";
 }
 
+function searchRecord(record: ReviewRecord, keyword: string) {
+  if (!keyword) return true;
+  return [
+    record.title,
+    record.owner,
+    record.meetingTime,
+    record.decision,
+    record.attendees.join(" "),
+  ].some((value) => value.toLowerCase().includes(keyword));
+}
+
 export default function ReviewRecords() {
   const navigate = useNavigate();
-  const [selectedId, setSelectedId] = useState(reviewRecords[0].id);
+  const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const selectedRecord = useMemo(
-    () => reviewRecords.find((item) => item.id === selectedId) ?? reviewRecords[0],
-    [selectedId],
-  );
-
-  const doneCount = reviewRecords.filter((item) => item.tone === "done").length;
-  const pendingCount = reviewRecords.filter((item) => item.tone === "pending").length;
+  const filteredRecords = useMemo(() => {
+    const keyword = searchQuery.trim().toLowerCase();
+    return reviewRecords.filter((record) => {
+      const matchFilter = activeFilter === "all" || record.tone === activeFilter;
+      return matchFilter && searchRecord(record, keyword);
+    });
+  }, [activeFilter, searchQuery]);
 
   return (
     <div className="min-h-full bg-[#F5F7FA]">
-      <div className="bg-white border-b border-gray-200 px-4 md:px-6 pt-4 pb-4">
-        <div className="max-w-5xl mx-auto">
-          <button
-            onClick={() => navigate("/workbench/collab")}
-            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-3"
-          >
-            <ArrowLeft size={16} /> 返回销设协同
-          </button>
-
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div>
-              <div className="flex items-center gap-2 flex-wrap mb-2">
-                <span className="text-xs px-2 py-0.5 rounded-full bg-[#EEF4FF] text-[#2F5FD0]">会审留痕独立页</span>
-                <span className="text-xs text-gray-400">不只看准备，还把决议、评分和案例沉淀继续接上</span>
-              </div>
-              <h1 className="text-gray-900 text-base leading-snug mb-1">会审记录页</h1>
-              <p className="text-sm text-gray-500 leading-relaxed">把会审后的决议、责任人、后续动作和可复用资产沉淀下来，减少销售、设计和带教之间再次出现讲法不一致。</p>
-            </div>
+      <div className="bg-[#1E2A3A] px-4 md:px-6 pt-4 pb-12">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-white text-xl font-semibold">方案会审记录</h1>
             <button
-              onClick={() => navigate("/workbench/history")}
-              className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600 hover:bg-gray-50 transition-colors"
+              onClick={() => navigate("/workbench/collab")}
+              className="px-3 py-2 rounded-lg bg-white text-[#1E2A3A] hover:bg-gray-100 text-sm transition-colors"
             >
-              查看通用时间线
+              返回客户单
             </button>
-          </div>
-
-          <div className="mt-4 rounded-2xl bg-[#1E2A3A] p-4 md:p-5 grid md:grid-cols-4 gap-3">
-            {[
-              { label: "记录数", value: `${reviewRecords.length} 条` },
-              { label: "已沉淀", value: `${doneCount} 条` },
-              { label: "待补记录", value: `${pendingCount} 条` },
-              { label: "可复用资产", value: `${reviewRecords.reduce((sum, item) => sum + item.assets.length, 0)} 项` },
-            ].map((item) => (
-              <div key={item.label} className="rounded-xl bg-white/5 px-3 py-3">
-                <p className="text-xs text-white/50 mb-1">{item.label}</p>
-                <p className="text-sm text-white leading-relaxed">{item.value}</p>
-              </div>
-            ))}
           </div>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 grid md:grid-cols-5 gap-4">
-        <div className="md:col-span-2 space-y-3">
-          {reviewRecords.map((record) => (
-            <button
-              key={record.id}
-              onClick={() => setSelectedId(record.id)}
-              className={`w-full text-left bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-all ${
-                selectedRecord.id === record.id ? "ring-2 ring-[#2F5FD0]" : ""
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#EEF4FF] flex items-center justify-center flex-shrink-0">
-                  <Users size={16} className="text-[#2F5FD0]" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${toneMeta(record.tone)}`}>{toneLabel(record.tone)}</span>
-                    <span className="text-xs text-gray-400">{record.meetingTime}</span>
-                  </div>
-                  <p className="text-sm font-medium text-gray-900">{record.title}</p>
-                  <p className="text-xs text-gray-500 mt-1 leading-relaxed">{record.summary}</p>
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-
-        <div className="md:col-span-3 space-y-4">
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <div className="flex items-start justify-between gap-3 flex-wrap">
-              <div>
-                <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${toneMeta(selectedRecord.tone)}`}>{toneLabel(selectedRecord.tone)}</span>
-                  <span className="text-xs text-gray-400">会审时间：{selectedRecord.meetingTime}</span>
-                  <span className="text-xs text-gray-400">负责人：{selectedRecord.owner}</span>
-                </div>
-                <h2 className="text-base font-medium text-gray-900">{selectedRecord.title}</h2>
-                <p className="text-xs text-gray-500 mt-1 leading-relaxed">{selectedRecord.summary}</p>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  onClick={() => navigate(selectedRecord.relatedPath)}
-                  className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600 hover:bg-gray-50 transition-colors"
-                >
-                  查看会审准备页
-                </button>
-                <button
-                  onClick={() => navigate(selectedRecord.scorePath)}
-                  className="px-3 py-1.5 rounded-lg bg-[#2F5FD0] hover:bg-[#2550B8] text-white text-xs transition-colors"
-                >
-                  查看评分反馈页
-                </button>
-              </div>
+      <div className="max-w-6xl mx-auto px-4 md:px-6 -mt-7 pb-8">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+            <div>
+              <p className="text-sm font-medium text-gray-900">所有会审记录</p>
+              <p className="text-sm text-gray-500 mt-1">先筛选，也可以按项目、负责人或会审时间查询。</p>
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-4">
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <FileText size={15} className="text-[#2F5FD0]" />
-                <span className="text-sm font-medium text-gray-900">会审决议</span>
-              </div>
-              <div className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-3 py-3 text-xs text-gray-600 leading-relaxed">
-                {selectedRecord.decision}
-              </div>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Users size={15} className="text-[#2F5FD0]" />
-                <span className="text-sm font-medium text-gray-900">参与角色</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {selectedRecord.attendees.map((item) => (
-                  <span key={item} className="text-xs px-2 py-1 rounded-full bg-[#F5F7FA] border border-gray-200 text-gray-600">
-                    {item}
+          <div className="flex flex-wrap gap-2 mb-3">
+            {filters.map((filter) => (
+              <button
+                key={filter.key}
+                type="button"
+                onClick={() => setActiveFilter(filter.key)}
+                className={`px-4 py-2 rounded-xl text-sm transition-colors border ${
+                  activeFilter === filter.key
+                    ? "bg-[#2F5FD0] text-white border-[#2F5FD0]"
+                    : "bg-white text-gray-700 border-gray-200 hover:border-[#2F5FD0]/40"
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-3 rounded-xl bg-[#F8FAFC] border border-gray-200 px-3 py-2">
+            <Search size={16} className="text-gray-400 flex-shrink-0" />
+            <input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="按会审项目、负责人、参与角色或时间查询"
+              className="flex-1 h-10 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 outline-none"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="w-8 h-8 rounded-lg bg-gray-100 text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors flex items-center justify-center"
+              >
+                <X size={15} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {filteredRecords.length > 0 ? (
+          <div className="grid xl:grid-cols-2 gap-4">
+            {filteredRecords.map((record) => (
+              <button
+                key={record.id}
+                type="button"
+                onClick={() => navigate(record.relatedPath)}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 hover:border-[#2F5FD0]/40 hover:shadow-md transition-all p-4 text-left"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${toneMeta(record.tone)}`}>{toneLabel(record.tone)}</span>
+                      <span className="text-xs text-gray-400 inline-flex items-center gap-1">
+                        <Clock3 size={11} /> {record.meetingTime}
+                      </span>
+                    </div>
+                    <h2 className="text-base font-medium text-gray-900 mt-2 leading-relaxed">{record.title}</h2>
+                    <p className="text-sm text-gray-500 mt-1">负责人：{record.owner}</p>
+                  </div>
+                  <div className="w-16 h-16 rounded-full border-4 border-blue-200 bg-blue-50 text-[#2F5FD0] flex flex-col items-center justify-center flex-shrink-0">
+                    <span className="text-lg font-bold leading-none">{record.assets.length}</span>
+                    <span className="text-xs mt-0.5">资产</span>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-3 mt-4">
+                  <div className="rounded-xl bg-[#F8FAFC] border border-gray-100 px-3 py-3">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                      <Users size={13} />
+                      参与角色
+                    </div>
+                    <p className="text-sm text-gray-800 mt-1.5 line-clamp-1">{record.attendees.join("、")}</p>
+                  </div>
+                  <div className="rounded-xl bg-[#F8FAFC] border border-gray-100 px-3 py-3">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                      <FileText size={13} />
+                      会审决议
+                    </div>
+                    <p className="text-sm text-gray-800 mt-1.5 line-clamp-1">{record.decision}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <span className="text-sm text-gray-500">后续动作 {record.followUps.length} 项</span>
+                  <span className="inline-flex items-center gap-1 text-sm text-[#2F5FD0]">
+                    查看详情 <ChevronRight size={14} />
                   </span>
-                ))}
-              </div>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Star size={15} className="text-[#F59E0B]" />
-                <span className="text-sm font-medium text-gray-900">当前判断</span>
-              </div>
-              <div className={`rounded-xl px-3 py-3 text-xs leading-relaxed ${selectedRecord.tone === "done" ? "bg-green-50 text-[#15803D]" : selectedRecord.tone === "risk" ? "bg-red-50 text-[#DC2626]" : "bg-amber-50 text-[#B45309]"}`}>
-                {selectedRecord.tone === "done"
-                  ? "当前这条会审已经完成评分和案例沉淀，可以直接复用。"
-                  : "当前会审还没有完全闭环，需要把决议、评分与资产沉淀继续补齐。"}
-              </div>
-            </div>
+                </div>
+              </button>
+            ))}
           </div>
-
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <CheckCircle2 size={15} className="text-[#16A34A]" />
-                <span className="text-sm font-medium text-gray-900">后续动作</span>
-              </div>
-              <div className="space-y-2">
-                {selectedRecord.followUps.map((item) => (
-                  <div key={item} className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-3 py-3 text-xs text-gray-600 leading-relaxed">
-                    {item}
-                  </div>
-                ))}
-              </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-4 py-16 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-[#F5F7FA] mx-auto flex items-center justify-center text-gray-400 mb-3">
+              <Search size={18} />
             </div>
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <AlertTriangle size={15} className="text-[#F59E0B]" />
-                <span className="text-sm font-medium text-gray-900">沉淀资产</span>
-              </div>
-              <div className="space-y-2">
-                {selectedRecord.assets.map((item) => (
-                  <div key={item} className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-3 text-xs text-amber-700 leading-relaxed">
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
+            <p className="text-sm font-medium text-gray-900">没有找到会审记录</p>
+            <p className="text-sm text-gray-500 mt-1">换一个项目、负责人或会审时间再搜。</p>
           </div>
-
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Clock3 size={15} className="text-[#2F5FD0]" />
-              <span className="text-sm font-medium text-gray-900">会审推进记录</span>
-            </div>
-            <TimelineFeed items={selectedRecord.history} />
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

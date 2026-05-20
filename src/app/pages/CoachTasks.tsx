@@ -16,6 +16,9 @@ import {
 import { opsTaskRecords } from "../data/communityOpsData";
 import { GlobalStateCard } from "../components/GlobalStateCard";
 
+const showOpsTaskSummary = false;
+const showOpsTaskSidebar = false;
+
 function priorityTone(priority: "high" | "medium" | "normal") {
   if (priority === "high") return "bg-red-100 text-[#DC2626]";
   if (priority === "medium") return "bg-amber-100 text-[#B45309]";
@@ -61,9 +64,6 @@ export default function CoachTasks() {
     });
   }, [priorityFilter, sourceFilter, statusFilter]);
 
-  const pendingCount = opsTaskRecords.filter((item) => item.status !== "done").length;
-  const highPriorityCount = opsTaskRecords.filter((item) => item.priority === "high" && item.status !== "done").length;
-  const dueTodayCount = opsTaskRecords.filter((item) => item.deadline.includes("今天")).length;
   const ownerSummary = useMemo(() => {
     return Array.from(
       opsTaskRecords.reduce((map, item) => {
@@ -94,9 +94,6 @@ export default function CoachTasks() {
                 <span className="text-xs text-gray-400">每条任务必须有对象、责任人、截止时间和回执口径</span>
               </div>
               <h1 className="text-gray-900 text-base leading-snug mb-1">运营动作任务页</h1>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                把风险名单后的处理动作拆成可执行任务，避免只看到红色预警但没有负责人和闭环结果。
-              </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <button
@@ -114,24 +111,14 @@ export default function CoachTasks() {
             </div>
           </div>
 
-          <div className="mt-4 rounded-2xl bg-[#1E2A3A] p-4 md:p-5 grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {[
-              { label: "当前任务", value: `${opsTaskRecords.length} 项` },
-              { label: "待闭环", value: `${pendingCount} 项` },
-              { label: "高优先", value: `${highPriorityCount} 项` },
-              { label: "今天截止", value: `${dueTodayCount} 项` },
-            ].map((item) => (
-              <div key={item.label} className="rounded-xl bg-white/5 px-3 py-3">
-                <p className="text-xs text-white/50 mb-1">{item.label}</p>
-                <p className="text-sm text-white leading-relaxed">{item.value}</p>
-              </div>
-            ))}
-          </div>
+          {showOpsTaskSummary && (
+            <div className="mt-4 rounded-2xl bg-[#1E2A3A] p-4 md:p-5 grid grid-cols-2 lg:grid-cols-4 gap-3" />
+          )}
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 grid lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 space-y-4">
+      <div className={`max-w-6xl mx-auto px-4 md:px-6 py-4 grid gap-4 ${showOpsTaskSidebar ? "lg:grid-cols-3" : "grid-cols-1"}`}>
+        <div className={showOpsTaskSidebar ? "lg:col-span-2 space-y-4" : "space-y-4"}>
           <div className="bg-white rounded-xl shadow-sm p-4">
             <div className="flex items-center gap-2 mb-3">
               <Filter size={15} className="text-[#2F5FD0]" />
@@ -345,6 +332,7 @@ export default function CoachTasks() {
           )}
         </div>
 
+        {showOpsTaskSidebar && (
         <div className="space-y-4">
           <div className="bg-white rounded-xl shadow-sm p-4">
             <div className="flex items-center gap-2 mb-3">
@@ -413,6 +401,7 @@ export default function CoachTasks() {
             </button>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

@@ -4,7 +4,6 @@ import {
   ArrowRight,
   AlertTriangle,
   BookOpen,
-  CheckCircle2,
   ChevronRight,
   Clock,
   FileCheck,
@@ -45,9 +44,6 @@ export default function DesignStandards() {
                 <span className="text-xs px-2 py-0.5 rounded-full bg-red-50 text-[#DC2626]">高优先级补齐</span>
               </div>
               <h1 className="text-gray-900 text-base leading-snug">{designStandardsSummary.title}</h1>
-              <p className="text-sm text-gray-500 mt-1.5 leading-relaxed max-w-3xl">
-                {designStandardsSummary.desc}
-              </p>
             </div>
             <button
               onClick={() => navigate("/learning/design-standards/software-drawing")}
@@ -56,42 +52,11 @@ export default function DesignStandards() {
               从第一项开始 <ArrowRight size={14} />
             </button>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
-            {designStandardsSummary.stats.map((item) => (
-              <div key={item.label} className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-4 py-3">
-                <p className="text-sm text-gray-500">{item.label}</p>
-                <div className="mt-1 flex items-end gap-2">
-                  <span className="text-2xl font-bold text-[#2F5FD0]">{item.value}</span>
-                  <span className="text-sm text-gray-400 mb-0.5">{item.sub}</span>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-4">
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="md:col-span-2 space-y-4">
-            <div className="bg-white rounded-xl shadow-sm p-4 border border-[#D9E5FF] bg-[linear-gradient(180deg,#F7FAFF_0%,#FFFFFF_100%)]">
-              <div className="flex items-center gap-2 mb-3">
-                <CheckCircle2 size={16} className="text-[#2F5FD0]" />
-                <span className="text-base font-medium text-gray-900">建议使用顺序</span>
-              </div>
-              <div className="space-y-2">
-                {designStandardsSummary.sequence.map((item, index) => (
-                  <div key={item} className="flex items-start gap-3 rounded-xl bg-white border border-[#E5E7EB] px-3.5 py-3">
-                    <span className="w-6 h-6 rounded-full bg-[#EAF1FF] text-[#2F5FD0] text-xs font-medium flex items-center justify-center flex-shrink-0">
-                      {index + 1}
-                    </span>
-                    <p className="text-sm text-gray-600 leading-relaxed">{item}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-3">
+        <div className="space-y-3">
               {designStandardsModules.map((module, index) => (
                 <button
                   key={module.id}
@@ -135,36 +100,6 @@ export default function DesignStandards() {
                   </div>
                 </button>
               ))}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <AlertTriangle size={15} className="text-[#DC2626]" />
-                <span className="text-sm font-medium text-gray-900">本专题重点盯的风险</span>
-              </div>
-              <div className="space-y-2">
-                {designStandardsSummary.commonWarnings.map((item) => (
-                  <div key={item} className="rounded-lg bg-red-50 border border-red-100 px-3 py-3">
-                    <p className="text-sm text-[#991B1B] leading-relaxed">{item}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <BookOpen size={15} className="text-[#2F5FD0]" />
-                <span className="text-sm font-medium text-gray-900">进入后怎么用</span>
-              </div>
-              <div className="space-y-2 text-sm text-gray-600 leading-relaxed">
-                <p>先看当前主题的“高风险信号”，确认最近最容易出错的点。</p>
-                <p>再按“规则块 → 自检清单 → 高频错误”的顺序过一遍，确保不是只看不落动作。</p>
-                <p>最后从右侧快捷动作跳到 AI 问答、陪练或工作台链路里，验证是否真的能用起来。</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

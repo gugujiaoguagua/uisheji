@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import {
   AlertTriangle,
@@ -16,15 +16,20 @@ import {
 } from "lucide-react";
 import {
   messages,
+  communityOpsMessages,
+  designerMessages,
+  salesMessages,
   receiptItemTone,
   receiptStatusLabel,
   receiptStatusTone,
+  trainingTeacherMessages,
   type MessageCategory,
   type MessageItem,
   type QuickFilter,
   type ReceiptStatus,
 } from "../data/messagesData";
 import { GlobalStateCard } from "../components/GlobalStateCard";
+import { useApp } from "../context/AppContext";
 
 type BatchReceipt = {
   count: number;
@@ -92,21 +97,39 @@ const messageListClass = messageUsesSplitDesktopLayout ? "xl:col-span-2 space-y-
 
 
 export default function Messages() {
-
-
-
-
-
   const navigate = useNavigate();
+  const { user, currentIdentity } = useApp();
+  const activeMessages =
+    currentIdentity === "staff" && user?.staffRole === "training_teacher"
+      ? trainingTeacherMessages
+      : currentIdentity === "staff" && user?.staffRole === "ops"
+        ? communityOpsMessages
+        : currentIdentity === "staff" && user?.staffRole === "designer"
+          ? designerMessages
+          : currentIdentity === "staff" && user?.staffRole === "sales"
+            ? salesMessages
+        : messages;
   const [category, setCategory] = useState<MessageCategory | "all">("all");
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("all");
   const [readIds, setReadIds] = useState<string[]>([]);
-  const [selectedId, setSelectedId] = useState(messages[0]?.id ?? "");
+  const [selectedId, setSelectedId] = useState(activeMessages[0]?.id ?? "");
   const [batchMode, setBatchMode] = useState(false);
   const [selectedBatchIds, setSelectedBatchIds] = useState<string[]>([]);
   const [receiptDoneIds, setReceiptDoneIds] = useState<string[]>([]);
   const [receiptUpdates, setReceiptUpdates] = useState<Record<string, string>>({});
   const [batchReceipt, setBatchReceipt] = useState<BatchReceipt | null>(null);
+  const isTrainingTeacherMessages = currentIdentity === "staff" && user?.staffRole === "training_teacher";
+  const isOpsMessages = currentIdentity === "staff" && user?.staffRole === "ops";
+  const isDesignerMessages = currentIdentity === "staff" && user?.staffRole === "designer";
+  const isSalesMessages = currentIdentity === "staff" && user?.staffRole === "sales";
+
+  useEffect(() => {
+    setCategory("all");
+    setQuickFilter("all");
+    setSelectedId(activeMessages[0]?.id ?? "");
+    setSelectedBatchIds([]);
+    setBatchMode(false);
+  }, [activeMessages]);
 
   const isRead = (message: MessageItem) => readIds.includes(message.id) || !message.unread;
   const resolvedReceiptStatus = (message: MessageItem): ReceiptStatus => (receiptDoneIds.includes(message.id) ? "done" : message.receipt.status);
@@ -121,12 +144,12 @@ export default function Messages() {
     markRead(id);
   };
 
-  const unreadCount = messages.filter((message) => !isRead(message)).length;
-  const urgentCount = messages.filter((message) => message.urgency === "urgent").length;
-  const pendingReceiptCount = messages.filter((message) => resolvedReceiptStatus(message) !== "done").length;
+  const unreadCount = activeMessages.filter((message) => !isRead(message)).length;
+  const urgentCount = activeMessages.filter((message) => message.urgency === "urgent").length;
+  const pendingReceiptCount = activeMessages.filter((message) => resolvedReceiptStatus(message) !== "done").length;
 
   const filteredMessages = useMemo(() => {
-    return messages.filter((message) => {
+    return activeMessages.filter((message) => {
       const matchCategory = category === "all" || message.category === category;
       const matchQuickFilter =
         quickFilter === "all"
@@ -137,7 +160,7 @@ export default function Messages() {
 
       return matchCategory && matchQuickFilter;
     });
-  }, [category, quickFilter, readIds]);
+  }, [activeMessages, category, quickFilter, readIds]);
 
   const selectedMessage = useMemo(
     () => filteredMessages.find((message) => message.id === selectedId) ?? filteredMessages[0] ?? null,
@@ -196,7 +219,17 @@ export default function Messages() {
           <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
             <div>
               <h1 className="text-gray-900">消息中心</h1>
-              <p className="text-sm text-gray-500 mt-1">保留现有统一承接入口，在页内补齐消息详情态、批量处理、处理回执和来源业务链路。</p>
+              <p className="text-sm text-gray-500 mt-1">
+                {isTrainingTeacherMessages
+                  ? "培训老师只看学员跟进、演练评分、公司产品确认和案例沉淀相关消息。"
+                  : isOpsMessages
+                    ? "运营只看资源开拓、社群过程、转化风险、数据口径和新人培养相关消息。"
+                    : isDesignerMessages
+                      ? "设计师只看销设协同、方案会审、公司产品确认和设计规范相关消息。"
+                      : isSalesMessages
+                        ? "销售只看客户跟进、报价推进、销设协同和公司产品确认相关消息。"
+                  : "保留现有统一承接入口，在页内补齐消息详情态、批量处理、处理回执和来源业务链路。"}
+              </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <button
@@ -206,7 +239,7 @@ export default function Messages() {
                 {batchMode ? "退出批量处理" : "批量处理"}
               </button>
               <button
-                onClick={() => setReadIds(messages.map((message) => message.id))}
+                onClick={() => setReadIds(activeMessages.map((message) => message.id))}
                 className="text-xs text-[#2F5FD0] hover:text-[#2550B8]"
               >
                 全部已读
@@ -217,7 +250,7 @@ export default function Messages() {
           {showMessageOverviewStats && (
             <div className="grid md:grid-cols-4 grid-cols-2 gap-2 mb-4">
               {[
-                { label: "全部消息", value: `${messages.length}`, tone: "text-gray-900", bg: "bg-gray-100" },
+                { label: "全部消息", value: `${activeMessages.length}`, tone: "text-gray-900", bg: "bg-gray-100" },
                 { label: "未读消息", value: `${unreadCount}`, tone: "text-[#DC2626]", bg: "bg-red-50" },
                 { label: "紧急处理", value: `${urgentCount}`, tone: "text-[#B45309]", bg: "bg-amber-50" },
                 { label: "待回执", value: `${pendingReceiptCount}`, tone: "text-[#2F5FD0]", bg: "bg-blue-50" },
@@ -233,9 +266,10 @@ export default function Messages() {
 
           <div className="grid md:grid-cols-4 gap-2">
             {Object.entries(categoryMeta).map(([key, meta]) => {
-              const count = messages.filter((message) => message.category === key).length;
-              const unread = messages.filter((message) => message.category === key && !isRead(message)).length;
+              const count = activeMessages.filter((message) => message.category === key).length;
+              const unread = activeMessages.filter((message) => message.category === key && !isRead(message)).length;
               const active = category === key;
+              if (count === 0) return null;
 
               return (
                 <button
@@ -599,7 +633,7 @@ export default function Messages() {
               onClick: () => {
                 setCategory("all");
                 setQuickFilter("all");
-                setSelectedId(messages[0]?.id ?? "");
+                setSelectedId(activeMessages[0]?.id ?? "");
               },
             }}
           />

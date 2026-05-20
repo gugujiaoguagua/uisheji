@@ -4,8 +4,11 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
+  Download,
   Eye,
   FileText,
+  Maximize2,
+  Package,
   RefreshCw,
   Send,
   Sparkles,
@@ -14,13 +17,164 @@ import {
   X,
 } from "lucide-react";
 import { impactTone, nodeTone, updates } from "../data/infoSyncData";
+import { trainingProductUpdates } from "../data/trainingTeacherData";
 
 type SyncDetailTab = "summary" | "impact" | "sync";
 
 const showSummaryChangesPanel = false;
 const showSyncReminderPanel = false;
 
-export default function InfoSync() {
+function CompanyProductSync() {
+  const [selectedId, setSelectedId] = useState(trainingProductUpdates[0].id);
+  const [confirmedIds, setConfirmedIds] = useState<string[]>([]);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const selectedUpdate = trainingProductUpdates.find((item) => item.id === selectedId) ?? trainingProductUpdates[0];
+  const selectedConfirmed = confirmedIds.includes(selectedUpdate.id);
+
+  return (
+    <div className="min-h-full bg-[#F5F7FA]">
+      <div className="bg-white border-b border-gray-200 px-4 md:px-6 pt-4 pb-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <h1 className="text-gray-900">公司最新产品跟进</h1>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-4">
+        <div className="grid lg:grid-cols-5 gap-4">
+          <div className="lg:col-span-2 space-y-3">
+            {trainingProductUpdates.map((update) => {
+              const isConfirmed = confirmedIds.includes(update.id);
+              return (
+                <button
+                  key={update.id}
+                  onClick={() => setSelectedId(update.id)}
+                  className={`w-full text-left rounded-xl bg-white p-4 shadow-sm border transition-all hover:shadow-md ${
+                    selectedUpdate.id === update.id ? "border-[#2F5FD0] ring-2 ring-[#D9E5FF]" : "border-transparent"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#EEF4FF] text-[#2F5FD0] flex items-center justify-center flex-shrink-0">
+                      <Package size={18} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${update.updateType === "现场工艺" ? "bg-amber-100 text-[#B45309]" : "bg-blue-50 text-[#2F5FD0]"}`}>
+                          {update.updateType}
+                        </span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-[#2F5FD0]">{update.category}</span>
+                        <span className="text-xs text-gray-400">{update.version}</span>
+                      </div>
+                      <p className="text-sm font-medium text-gray-900 mt-2">{update.title}</p>
+                      <p className="text-xs text-gray-500 mt-1 leading-relaxed">{update.summary}</p>
+                      <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+                        <span className="text-gray-500">{update.mediaTitle}</span>
+                        <span className={isConfirmed ? "text-[#16A34A]" : "text-[#F59E0B]"}>{isConfirmed ? "已确认" : "未确认"}</span>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="lg:col-span-3 space-y-4">
+            <div className="rounded-xl bg-white p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap mb-2">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${selectedUpdate.updateType === "现场工艺" ? "bg-amber-100 text-[#B45309]" : "bg-blue-50 text-[#2F5FD0]"}`}>{selectedUpdate.updateType}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-[#2F5FD0]">{selectedUpdate.category}</span>
+                    <span className="text-xs text-gray-400">{selectedUpdate.version}</span>
+                  </div>
+                  <h2 className="text-lg font-medium text-gray-900">{selectedUpdate.title}</h2>
+                  <p className="text-sm text-gray-500 mt-1 leading-relaxed">{selectedUpdate.summary}</p>
+                </div>
+                <button
+                  onClick={() =>
+                    setConfirmedIds((prev) => (prev.includes(selectedUpdate.id) ? prev : [...prev, selectedUpdate.id]))
+                  }
+                  className={`px-3 py-2 rounded-lg text-sm transition-colors ${
+                    selectedConfirmed ? "bg-green-100 text-[#15803D]" : "bg-[#2F5FD0] text-white hover:bg-[#2550B8]"
+                  }`}
+                >
+                  {selectedConfirmed ? "已确认" : "看完确认"}
+                </button>
+              </div>
+
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={() => setPreviewUrl(selectedUpdate.mediaUrl)}
+                  className="group relative block w-full overflow-hidden rounded-xl border border-gray-200 bg-[#F8FAFC] text-left"
+                >
+                  <img src={selectedUpdate.mediaUrl} alt={selectedUpdate.mediaTitle} className="h-[360px] w-full object-cover" />
+                  <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-3 bg-black/45 px-4 py-3 text-white">
+                    <span className="text-sm">{selectedUpdate.mediaTitle}</span>
+                    <span className="flex items-center gap-1.5 text-xs">
+                      <Maximize2 size={14} /> 点击放大
+                    </span>
+                  </div>
+                </button>
+
+                <div className="mt-3 flex gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewUrl(selectedUpdate.mediaUrl)}
+                    className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                  >
+                    <Maximize2 size={14} /> 放大观看
+                  </button>
+                  <a
+                    href={selectedUpdate.mediaUrl}
+                    download
+                    className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                  >
+                    <Download size={14} /> 保存图片
+                  </a>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-3 mt-4">
+                {selectedUpdate.details.map((item) => (
+                  <div key={item.label} className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-4 py-3">
+                    <p className="text-xs text-gray-500">{item.label}</p>
+                    <p className="text-sm text-gray-800 mt-2 leading-relaxed">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {previewUrl && (
+        <div className="fixed inset-0 z-50 bg-black/75 p-4 flex items-center justify-center">
+          <div className="w-full max-w-5xl rounded-2xl bg-white p-3 shadow-2xl">
+            <div className="flex items-center justify-between gap-3 px-2 pb-3">
+              <span className="text-sm font-medium text-gray-900">{selectedUpdate.mediaTitle}</span>
+              <div className="flex items-center gap-2">
+                <a href={previewUrl} download className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50">
+                  保存图片
+                </a>
+                <button onClick={() => setPreviewUrl(null)} className="rounded-lg bg-gray-900 px-3 py-1.5 text-xs text-white">
+                  关闭
+                </button>
+              </div>
+            </div>
+            <img src={previewUrl} alt={selectedUpdate.mediaTitle} className="max-h-[78vh] w-full rounded-xl object-contain bg-[#F8FAFC]" />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InfoSyncLegacy() {
 
   const navigate = useNavigate();
   const [selectedId, setSelectedId] = useState(updates[0].id);
@@ -45,8 +199,8 @@ export default function InfoSync() {
         <div className="max-w-5xl mx-auto">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h1 className="text-gray-900">信息同步中心</h1>
-              <p className="text-xs text-gray-500 mt-0.5">把“更新详情、影响范围、下游同步”拆开看，避免只发通知不管后续。</p>
+              <h1 className="text-gray-900">公司产品</h1>
+              <p className="text-xs text-gray-500 mt-0.5">把产品更新详情、影响范围、下游同步拆开看，避免只发通知不管后续。</p>
             </div>
           </div>
 
@@ -317,7 +471,7 @@ export default function InfoSync() {
                 onClick={() => navigate("/workbench/content-ops")}
                 className="flex-1 min-w-[180px] py-2 border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl text-sm transition-colors"
               >
-                去培训运营处理题库 / 陪练
+                去社区运营处理题库 / 陪练
               </button>
               <button
                 onClick={() => navigate("/workbench/blueprint")}
@@ -392,4 +546,8 @@ export default function InfoSync() {
       )}
     </div>
   );
+}
+
+export default function InfoSync() {
+  return <CompanyProductSync />;
 }

@@ -1,0 +1,6 @@
+node_modules/
+.env
+.env.*
+.codex-chrome-navcheck/
+vite-*.log
+*.log

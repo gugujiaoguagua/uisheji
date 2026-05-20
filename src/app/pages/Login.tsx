@@ -19,17 +19,20 @@ import {
   useApp,
   Identity,
   LearnerRole,
+  StaffRole,
   StaffApprovalStatus,
   getIdentityLabel,
   getLearnerRoleMeta,
+  getStaffRoleMeta,
   getStaffApprovalStatusMeta,
   learnerRoleProfiles,
+  staffRoleProfiles,
 } from "../context/AppContext";
 
 const previewBase = {
   name: "张晓琳",
   avatar: "张",
-  department: "华南区销售部",
+  department: "直营赋能组",
   level: 3,
   points: 2840,
 };
@@ -55,7 +58,16 @@ const learnerRoleIcons: Record<LearnerRole, typeof BookOpen> = {
   designer: Palette,
 };
 
+const staffRoleIcons: Record<StaffRole, typeof BookOpen> = {
+  training_teacher: BookOpen,
+  ops: TrendingUp,
+  designer: Palette,
+  sales: Briefcase,
+  order_reviewer: FileCheck,
+};
+
 const learnerRoleKeys: LearnerRole[] = ["sales", "community_ops", "designer"];
+const staffRoleKeys: StaffRole[] = ["training_teacher", "ops", "designer", "sales", "order_reviewer"];
 
 
 const approvalStatusOptions: { key: StaffApprovalStatus; label: string }[] = [
@@ -77,7 +89,8 @@ function getPreviewAccount(status: StaffApprovalStatus) {
     case "approved":
       return {
         ...previewBase,
-        role: "区域带教销售顾问 · 华南区销售部",
+        role: "培训老师 · 直营赋能组",
+        staffRole: "training_teacher" as StaffRole,
         primaryIdentity: "staff" as Identity,
         availableIdentities: ["student", "staff"] as Identity[],
         staffApprovalStatus: status,
@@ -88,10 +101,10 @@ function getPreviewAccount(status: StaffApprovalStatus) {
           "AI 陪练",
           "考核与成长",
           "信息同步",
-          "培训运营",
-          "销设协同",
-          "审单回流",
-          "带教看板",
+          "场景演练",
+          "补训闭环",
+          "案例库",
+          "学员画像",
         ],
         applicationRecords: [
           {
@@ -191,6 +204,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [selectedIdentity, setSelectedIdentity] = useState<Identity | null>(null);
   const [selectedLearnerRole, setSelectedLearnerRole] = useState<LearnerRole>("sales");
+  const [selectedStaffRole, setSelectedStaffRole] = useState<StaffRole>("training_teacher");
   const [previewStatus, setPreviewStatus] = useState<StaffApprovalStatus>("not_applied");
   const { login } = useApp();
   const navigate = useNavigate();
@@ -214,12 +228,14 @@ export default function Login() {
   const handleIdentityConfirm = () => {
     if (!selectedIdentity) return;
     const learnerRoleMeta = getLearnerRoleMeta(selectedLearnerRole);
+    const staffRoleMeta = getStaffRoleMeta(selectedStaffRole);
     login(selectedIdentity, {
       name: previewAccount.name,
       avatar: previewAccount.avatar,
-      role: selectedIdentity === "student" ? learnerRoleMeta.roleTitle : previewAccount.role,
+      role: selectedIdentity === "student" ? learnerRoleMeta.roleTitle : staffRoleMeta.roleTitle,
       department: previewAccount.department,
       learnerRole: selectedLearnerRole,
+      staffRole: selectedStaffRole,
       primaryIdentity: previewAccount.primaryIdentity,
       availableIdentities: previewAccount.availableIdentities,
       staffApprovalStatus: previewAccount.staffApprovalStatus,
@@ -250,8 +266,8 @@ export default function Login() {
       key: "staff" as Identity,
       icon: Briefcase,
       title: "工作人员",
-      desc: "首页优先展示今日待办、待处理任务、风险提醒、快捷入口",
-      tags: ["信息同步", "培训运营", "销设协同", "审单回流", "带教看板"],
+      desc: "首页按工作人员岗位分流，不再把所有岗位事项堆在一起",
+      tags: ["培训老师", "运营", "设计师", "销售", "审单"],
       available: previewAccount.availableIdentities.includes("staff"),
       badge: previewAccount.availableIdentities.includes("staff")
         ? previewAccount.primaryIdentity === "staff"
@@ -573,6 +589,44 @@ export default function Login() {
                 </div>
               )}
 
+              {selectedIdentity === "staff" && (
+                <div className="mt-4 rounded-xl border border-[#D9E5FF] bg-[#F7FAFF] p-3">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-900">选择工作人员岗位</h3>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {staffRoleKeys.map((roleKey) => {
+                      const role = staffRoleProfiles[roleKey];
+                      const Icon = staffRoleIcons[roleKey];
+                      const active = selectedStaffRole === roleKey;
+                      return (
+                        <button
+                          key={roleKey}
+                          type="button"
+                          onClick={() => setSelectedStaffRole(roleKey)}
+                          className={`relative min-h-[74px] rounded-xl border p-3 text-left transition-all ${
+                            active ? "border-[#2F5FD0] bg-white shadow-sm" : "border-gray-200 bg-white/70 hover:border-[#2F5FD0]/40"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${active ? "bg-[#2F5FD0] text-white" : "bg-gray-100 text-gray-500"}`}>
+                              <Icon size={16} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-gray-900">{role.label}</p>
+                              <p className="text-xs text-gray-400">{role.shortLabel}</p>
+                            </div>
+                          </div>
+                          {active && <CheckCircle2 size={16} className="absolute right-3 top-3 text-[#2F5FD0]" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {loginTextVisibility.identityFlowSection && (
                 <div className="mt-4 rounded-xl bg-[#F8FAFC] border border-gray-200 p-3">
                   <div className="flex items-center gap-2 mb-2">
@@ -610,7 +664,7 @@ export default function Login() {
                 {selectedIdentity
                   ? selectedIdentity === "student"
                     ? `确认，进入${getLearnerRoleMeta(selectedLearnerRole).label}学习视角`
-                    : `确认，进入${getIdentityLabel(selectedIdentity)}视角`
+                    : `确认，进入${getStaffRoleMeta(selectedStaffRole).label}工作视角`
                   : "请选择本次使用身份"}
               </button>
             </div>

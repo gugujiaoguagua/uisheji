@@ -498,7 +498,7 @@ export const designStandardsModules: DesignStandardModule[] = [
     nextActions: [
       { label: "回到专题总览", path: "/learning/design-standards", emphasis: "primary" },
       { label: "去成长与补训安排复训", path: "/learning/growth", emphasis: "secondary" },
-      { label: "去带教看板看风险对象", path: "/workbench/dashboard", emphasis: "secondary" },
+      { label: "去异常看板看风险对象", path: "/workbench/dashboard", emphasis: "secondary" },
     ],
   },
 ];

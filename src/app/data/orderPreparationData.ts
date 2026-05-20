@@ -249,7 +249,7 @@ export const orderPreparations: Record<string, OrderPreparationData> = {
       {
         node: "替换报价说明模板",
         deadline: "今天下班前",
-        owner: "培训运营 / 门店销售",
+        owner: "社区运营 / 门店销售",
         status: "warning",
         note: "模板替换完成后，后续新单可直接复用。",
       },
@@ -285,7 +285,7 @@ export const orderPreparations: Record<string, OrderPreparationData> = {
       },
     ],
     syncNotes: [
-      "这类问题要同步到培训运营，不然下单准备补了，题库和陪练仍会讲旧内容。",
+      "这类问题要同步到社区运营，不然下单准备补了，题库和陪练仍会讲旧内容。",
       "建议把知识版本字段沉淀为下单和售后共用字段。",
     ],
     nextActions: [
@@ -472,7 +472,7 @@ export const orderPreparations: Record<string, OrderPreparationData> = {
       {
         node: "更新报价备注模板",
         deadline: "明天下午",
-        owner: "培训运营",
+        owner: "社区运营",
         status: "on-track",
         note: "已进入模板补充清单。",
       },
@@ -501,7 +501,7 @@ export const orderPreparations: Record<string, OrderPreparationData> = {
       },
     ],
     syncNotes: [
-      "这类参数问题要同步到带教看板，不能只停留在售后复盘。",
+      "这类参数问题要同步到异常看板，不能只停留在售后复盘。",
       "建议把“适用场景字段”纳入报价模板和安装核对清单的共同字段。",
     ],
     nextActions: [

@@ -3,14 +3,20 @@ import { useNavigate } from "react-router";
 import {
   AlertTriangle,
   BarChart3,
+  BookOpen,
+  CheckCircle2,
   ClipboardList,
   Clock,
   Database,
   MessageSquare,
+  Phone,
+  Search,
   Target,
+  TrendingUp,
   Users,
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { useApp } from "../context/AppContext";
 import {
   alertRuleItems,
   closureSteps,
@@ -20,6 +26,7 @@ import {
   riskItems,
   teamHealth,
 } from "../data/communityOpsData";
+import { trainingStudents } from "../data/trainingTeacherData";
 
 function stateTone(state: string) {
   if (state === "danger") return "bg-red-50 text-[#DC2626] border-red-100";
@@ -27,7 +34,266 @@ function stateTone(state: string) {
   return "bg-green-50 text-[#15803D] border-green-100";
 }
 
-export default function Dashboard() {
+function studentStatusTone(status: string) {
+  if (status === "红色") return "border-red-100 bg-red-50 text-[#DC2626]";
+  if (status === "需跟进") return "border-amber-100 bg-amber-50 text-[#B45309]";
+  return "border-green-100 bg-green-50 text-[#15803D]";
+}
+
+function scoreTone(score: number) {
+  if (score < 60) return "border-red-200 bg-red-50 text-[#DC2626]";
+  if (score < 75) return "border-amber-200 bg-amber-50 text-[#B45309]";
+  return "border-green-200 bg-green-50 text-[#16A34A]";
+}
+
+function studentPriority(status: string) {
+  if (status === "红色") return 0;
+  if (status === "需跟进") return 1;
+  return 2;
+}
+
+function TrainingTeacherDashboard() {
+  const navigate = useNavigate();
+  const cohortOptions = ["全部班级", ...Array.from(new Set(trainingStudents.map((student) => student.cohort)))];
+  const [selectedCohort, setSelectedCohort] = useState("全部班级");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const orderedStudents = [...trainingStudents].sort((a, b) => studentPriority(a.status) - studentPriority(b.status) || a.score - b.score);
+  const filteredStudents = orderedStudents.filter((student) => {
+    const cohortMatched = selectedCohort === "全部班级" || student.cohort === selectedCohort;
+    const nameMatched = student.name.includes(searchQuery.trim());
+    return cohortMatched && nameMatched;
+  });
+  const selectedStudent = selectedStudentId ? trainingStudents.find((student) => student.id === selectedStudentId) : null;
+
+  return (
+    <div className="min-h-full bg-[#F5F7FA]">
+      <div className="bg-[#1E2A3A] px-4 md:px-6 pt-4 pb-10">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <h1 className="text-white mb-1">学员培养看板</h1>
+              <p className="text-white/70 text-sm leading-relaxed">
+                培训老师第一眼看到每个学员学到哪、卡在哪里、今天要跟进什么。
+              </p>
+            </div>
+            <button
+              onClick={() => navigate("/workbench")}
+              className="px-3 py-1.5 rounded-lg bg-white text-[#1E2A3A] text-xs transition-colors"
+            >
+              回培训工作台
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 md:px-6 -mt-4 space-y-4">
+        <div className="space-y-4">
+            <div className="rounded-xl bg-white p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                <div>
+                  <h2 className="text-sm font-medium text-gray-900">{selectedStudent ? "学员详情看板" : "所有学员综合"}</h2>
+                  <p className="text-xs text-gray-500 mt-1">{selectedStudent ? "返回后可继续按班级或姓名查询其它学员。" : "先选班级，也可以按姓名查询；红色学员优先展示。"}</p>
+                </div>
+                {selectedStudent && (
+                  <button
+                    onClick={() => setSelectedStudentId(null)}
+                    className="rounded-lg border border-gray-200 px-3 py-2 text-xs text-gray-600 hover:bg-gray-50"
+                  >
+                    返回全部学员
+                  </button>
+                )}
+              </div>
+              {!selectedStudent && (
+                <div className="space-y-3">
+                  <div className="flex gap-2 overflow-x-auto hide-scrollbar">
+                    {cohortOptions.map((cohort) => (
+                      <button
+                        key={cohort}
+                        onClick={() => {
+                          setSelectedCohort(cohort);
+                          setSelectedStudentId(null);
+                        }}
+                        className={`shrink-0 rounded-xl border px-3 py-2 text-sm transition-colors ${
+                          selectedCohort === cohort
+                            ? "border-[#2F5FD0] bg-[#2F5FD0] text-white"
+                            : "border-gray-200 bg-[#FAFBFC] text-gray-600 hover:border-[#D9E5FF]"
+                        }`}
+                      >
+                        {cohort}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="relative">
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      value={searchQuery}
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      placeholder="按学员姓名查询"
+                      className="w-full rounded-xl border border-gray-200 bg-[#FAFBFC] py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none focus:border-[#2F5FD0] focus:bg-white"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {!selectedStudent ? (
+              <div className="grid lg:grid-cols-2 gap-4">
+                {filteredStudents.map((student) => {
+                  const weakestItem = student.assessmentItems.reduce((min, item) => (item.score < min.score ? item : min), student.assessmentItems[0]);
+                  return (
+                    <div
+                      key={student.id}
+                      onClick={() => setSelectedStudentId(student.id)}
+                      className="rounded-xl bg-white p-4 shadow-sm border border-transparent hover:border-[#D9E5FF] hover:shadow-md transition-all cursor-pointer"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h2 className="text-base font-medium text-gray-900">{student.name}</h2>
+                            <span className={`text-xs px-2 py-0.5 rounded-full border ${studentStatusTone(student.status)}`}>{student.status}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">{student.cohort} · {student.stage}</p>
+                        </div>
+                        <div className={`w-16 h-16 rounded-full border-4 flex flex-col items-center justify-center ${scoreTone(student.score)}`}>
+                          <div className="text-xl font-bold leading-none">{student.score}</div>
+                          <div className="text-[10px] mt-0.5">总分</div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 mt-4">
+                        <button
+                          onClick={(event) => event.stopPropagation()}
+                          className="flex items-center justify-center gap-2 rounded-xl bg-[#2F5FD0] px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-[#2550B8]"
+                        >
+                          <MessageSquare size={16} /> 发消息
+                        </button>
+                        <button
+                          onClick={(event) => event.stopPropagation()}
+                          className="flex items-center justify-center gap-2 rounded-xl bg-[#16A34A] px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-[#15803D]"
+                        >
+                          <Phone size={16} /> 打电话
+                        </button>
+                      </div>
+
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="text-gray-500">学习进度</span>
+                          <span className="text-[#2F5FD0]">{student.progress}%</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                          <div className="h-full rounded-full bg-[#2F5FD0]" style={{ width: `${student.progress}%` }} />
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid md:grid-cols-2 gap-3">
+                        <div className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-3 py-3">
+                          <p className="text-xs text-gray-500">当前卡点</p>
+                          <p className="text-sm text-[#DC2626] mt-2">{student.risk}</p>
+                        </div>
+                        <div className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-3 py-3">
+                          <p className="text-xs text-gray-500">最低分项</p>
+                          <p className="text-sm text-gray-700 mt-2">{weakestItem.label} {weakestItem.score}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {filteredStudents.length === 0 && (
+                  <div className="lg:col-span-2 rounded-xl bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
+                    没有匹配的学员
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="rounded-xl bg-white p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-base font-medium text-gray-900">{selectedStudent.name}</h2>
+                      <span className={`text-xs px-2 py-0.5 rounded-full border ${studentStatusTone(selectedStudent.status)}`}>{selectedStudent.status}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">{selectedStudent.cohort} · {selectedStudent.stage}</p>
+                  </div>
+                  <div className={`w-16 h-16 rounded-full border-4 flex flex-col items-center justify-center ${scoreTone(selectedStudent.score)}`}>
+                    <div className="text-xl font-bold leading-none">{selectedStudent.score}</div>
+                    <div className="text-[10px] mt-0.5">总分</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  <button className="flex items-center justify-center gap-2 rounded-xl bg-[#2F5FD0] px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-[#2550B8]">
+                    <MessageSquare size={16} /> 发消息
+                  </button>
+                  <button className="flex items-center justify-center gap-2 rounded-xl bg-[#16A34A] px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-[#15803D]">
+                    <Phone size={16} /> 打电话
+                  </button>
+                </div>
+
+                <div className="mt-4">
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-gray-500">学习进度</span>
+                    <span className="text-[#2F5FD0]">{selectedStudent.progress}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                    <div className="h-full rounded-full bg-[#2F5FD0]" style={{ width: `${selectedStudent.progress}%` }} />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-3 mt-4">
+                  <div className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-3 py-3">
+                    <p className="text-xs text-gray-500">当前卡点</p>
+                    <p className="text-sm text-[#DC2626] mt-2">{selectedStudent.risk}</p>
+                  </div>
+                  <div className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-3 py-3">
+                    <p className="text-xs text-gray-500">最近演练</p>
+                    <p className="text-sm text-gray-700 mt-2">{selectedStudent.lastPractice}</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {selectedStudent.weakAreas.map((tag) => (
+                    <span key={tag} className="text-xs px-2 py-1 rounded-full bg-amber-50 text-[#B45309]">{tag}</span>
+                  ))}
+                </div>
+
+                <div className="mt-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ClipboardList size={14} className="text-[#2F5FD0]" />
+                    <span className="text-sm font-medium text-gray-900">分项评分与真实考核情况</span>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-2">
+                    {selectedStudent.assessmentItems.map((item) => (
+                      <div key={item.label} className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-3 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-sm font-medium text-gray-900">{item.label}</span>
+                          <span className={`w-11 h-11 rounded-full border-2 flex items-center justify-center text-sm font-bold ${scoreTone(item.score)}`}>
+                            {item.score}
+                          </span>
+                        </div>
+                        <div className="mt-2 flex items-center gap-2">
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${item.score < 60 ? "bg-red-50 text-[#DC2626]" : item.score < 75 ? "bg-amber-50 text-[#B45309]" : "bg-green-50 text-[#15803D]"}`}>
+                            {item.status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2 leading-relaxed">{item.evidence}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-xl border border-[#D9E5FF] bg-[#F7FAFF] px-3 py-3 text-sm text-[#2F5FD0]">
+                  跟进动作：{selectedStudent.nextAction}
+                </div>
+              </div>
+            )}
+          </div>
+      </div>
+    </div>
+  );
+}
+
+function DashboardLegacy() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"risk" | "nodes" | "team">("risk");
 
@@ -272,4 +538,14 @@ export default function Dashboard() {
       </div>
     </div>
   );
+}
+
+export default function Dashboard() {
+  const { user } = useApp();
+
+  if ((user?.staffRole ?? "training_teacher") === "training_teacher") {
+    return <TrainingTeacherDashboard />;
+  }
+
+  return <DashboardLegacy />;
 }

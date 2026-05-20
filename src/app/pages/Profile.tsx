@@ -40,7 +40,7 @@ const identityDescriptions = {
 
 const identityActions = {
   student: ["学习中心", "AI 问答", "AI 陪练", "考核", "成长与补训"],
-  staff: ["信息同步", "培训运营", "销设协同", "审单回流", "审批·申请", "带教看板"],
+  staff: ["信息同步", "社区运营", "销设协同", "审单回流", "审批·申请", "异常看板"],
 };
 
 const retainedLearningAbilities = ["学习中心", "历史课程", "考核记录", "成长档案", "补训任务"];

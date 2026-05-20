@@ -16,6 +16,7 @@ import {
   Target,
   UserRound,
 } from "lucide-react";
+import { useApp } from "../context/AppContext";
 import {
   conversionCards,
   alertRuleItems,
@@ -31,6 +32,7 @@ import {
   summaryCards,
   teamHealth,
 } from "../data/communityOpsData";
+import { trainingCaseLibrary, trainingFollowUpTasks } from "../data/trainingTeacherData";
 
 type OpsView = "overview" | "resource" | "process" | "governance" | "conversion" | "method" | "enablement";
 
@@ -84,7 +86,173 @@ function methodIcon(icon: string) {
   return <GitBranch size={16} />;
 }
 
-export default function ContentOps() {
+function TrainingTeacherCases() {
+  const navigate = useNavigate();
+  const [activeView, setActiveView] = useState<"library" | "method" | "scripts" | "review">("library");
+  const reusableCount = trainingCaseLibrary.filter((item) => item.status === "可复用").length;
+  const pendingCount = trainingCaseLibrary.length - reusableCount;
+
+  return (
+    <div className="min-h-full bg-[#F5F7FA]">
+      <div className="bg-white border-b border-gray-200 px-4 md:px-6 pt-4 pb-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <h1 className="text-gray-900">培训案例与教案沉淀</h1>
+              <p className="text-sm text-gray-500 mt-1">
+                把师傅经验、真实接待问题和优秀讲解沉淀成可复用的课件、题库和陪练脚本。
+              </p>
+            </div>
+            <button
+              onClick={() => navigate("/workbench")}
+              className="px-3 py-2 rounded-lg bg-[#2F5FD0] text-sm text-white hover:bg-[#2550B8] transition-colors"
+            >
+              回培训工作台
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 space-y-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { label: "案例总数", value: trainingCaseLibrary.length, helper: "来自带教师傅访谈", tone: "text-[#2F5FD0]", bg: "bg-blue-50 border-blue-100" },
+            { label: "可直接复用", value: reusableCount, helper: "可进课堂和陪练", tone: "text-[#16A34A]", bg: "bg-green-50 border-green-100" },
+            { label: "待补评分表", value: pendingCount, helper: "还需转成结构化标准", tone: "text-[#F59E0B]", bg: "bg-amber-50 border-amber-100" },
+            { label: "本周跟进", value: trainingFollowUpTasks.length, helper: "产品、题库、学员联动", tone: "text-[#DC2626]", bg: "bg-red-50 border-red-100" },
+          ].map((item) => (
+            <div key={item.label} className={`rounded-xl border px-4 py-3 ${item.bg}`}>
+              <p className="text-xs text-gray-500">{item.label}</p>
+              <p className={`text-2xl font-bold mt-1 ${item.tone}`}>{item.value}</p>
+              <p className="text-xs text-gray-500 mt-1">{item.helper}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex gap-1 rounded-xl bg-white p-1 shadow-sm overflow-x-auto hide-scrollbar">
+          {[
+            { key: "library", label: "案例库" },
+            { key: "method", label: "带教方法" },
+            { key: "scripts", label: "陪练脚本" },
+            { key: "review", label: "复盘入库" },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveView(tab.key as "library" | "method" | "scripts" | "review")}
+              className={`min-w-[108px] flex-1 rounded-lg px-3 py-2 text-sm transition-colors ${
+                activeView === tab.key ? "bg-[#2F5FD0] text-white" : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {activeView === "library" && (
+          <div className="grid md:grid-cols-2 gap-4">
+            {trainingCaseLibrary.map((item) => (
+              <button key={item.title} className="rounded-xl bg-white p-4 shadow-sm text-left hover:shadow-md transition-all">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#EEF4FF] text-[#2F5FD0] flex items-center justify-center flex-shrink-0">
+                    <BookOpen size={18} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-sm font-medium text-gray-900">{item.title}</h2>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${item.status === "可复用" ? "bg-green-100 text-[#15803D]" : "bg-amber-100 text-[#B45309]"}`}>
+                        {item.status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">{item.source} · {item.type}</p>
+                    <p className="text-sm text-gray-600 leading-relaxed mt-3">{item.desc}</p>
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {item.useFor.map((tag) => (
+                        <span key={tag} className="text-xs px-2 py-1 rounded-full bg-[#F5F7FA] text-gray-600">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {activeView === "method" && (
+          <div className="grid lg:grid-cols-3 gap-4">
+            {[
+              { title: "旁听接待", desc: "先看师傅怎么问关注点、空间、柜体、收纳和预算，再让新人复述。", output: "接待观察表" },
+              { title: "角色扮演", desc: "用客户不高兴、价格异议、材料追问等场景让新人开口练。", output: "陪练脚本" },
+              { title: "报价反复演练", desc: "把模块报价、产品估价和差异解释练到能独立说清。", output: "复测题库" },
+            ].map((item) => (
+              <div key={item.title} className="rounded-xl bg-white p-4 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <Target size={16} className="text-[#2F5FD0]" />
+                  <span className="text-sm font-medium text-gray-900">{item.title}</span>
+                </div>
+                <p className="text-sm text-gray-600 leading-relaxed">{item.desc}</p>
+                <div className="mt-4 rounded-lg border border-[#D9E5FF] bg-[#F7FAFF] px-3 py-2 text-xs text-[#2F5FD0]">
+                  产出：{item.output}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeView === "scripts" && (
+          <div className="grid lg:grid-cols-2 gap-4">
+            {[
+              { title: "客户追问防水材料禁用原因", scene: "产品更新后，客户问为什么旧材料不能用了。", score: "是否能先解释安全边界，再讲新规范价值。" },
+              { title: "高端柜体材质比较", scene: "客户在铝套盒、皮抽面和普通柜体之间犹豫。", score: "是否先讲空间需求，再讲材质和工艺差异。" },
+              { title: "预算超出后的方案调整", scene: "客户觉得报价高，要求立刻降价。", score: "是否能拆模块、讲取舍，而不是直接让价。" },
+              { title: "客户不满意上门处理", scene: "客户对交付效果不满，情绪比较强。", score: "是否先道歉到场、接住问题，再协调。" },
+            ].map((item) => (
+              <div key={item.title} className="rounded-xl bg-white p-4 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <ClipboardList size={16} className="text-[#16A34A]" />
+                  <span className="text-sm font-medium text-gray-900">{item.title}</span>
+                </div>
+                <p className="text-sm text-gray-600 leading-relaxed">场景：{item.scene}</p>
+                <p className="text-xs text-gray-500 mt-3 rounded-lg bg-[#FAFBFC] border border-gray-200 px-3 py-2">评分重点：{item.score}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeView === "review" && (
+          <div className="grid lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2 rounded-xl bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <Layers size={16} className="text-[#2F5FD0]" />
+                <span className="text-sm font-medium text-gray-900">从经验到课程的入库链路</span>
+              </div>
+              <div className="grid md:grid-cols-4 gap-3">
+                {["访谈摘录", "风险边界", "评分标准", "进入课件/陪练"].map((step, index) => (
+                  <div key={step} className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-3 py-3">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-white text-gray-500">步骤 {index + 1}</span>
+                    <p className="text-sm font-medium text-gray-900 mt-3">{step}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl bg-[#1E2A3A] p-4 text-white shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <CheckCircle2 size={16} className="text-green-200" />
+                <span className="text-sm font-medium">入库原则</span>
+              </div>
+              <p className="text-xs text-white/70 leading-relaxed">
+                录音经验不能直接变 SOP，要先标注适用场景、风险边界和评分口径，再进入课件、题库与陪练。
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ContentOpsLegacy() {
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState<OpsView>("overview");
 
@@ -675,4 +843,14 @@ export default function ContentOps() {
       </div>
     </div>
   );
+}
+
+export default function ContentOps() {
+  const { user } = useApp();
+
+  if ((user?.staffRole ?? "training_teacher") === "training_teacher") {
+    return <TrainingTeacherCases />;
+  }
+
+  return <ContentOpsLegacy />;
 }

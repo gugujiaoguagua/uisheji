@@ -459,7 +459,7 @@ export default function AIQnA() {
                                   onClick={() => navigate("/workbench/content-ops")}
                                   className="text-xs text-[#2F5FD0] hover:text-[#2550B8]"
                                 >
-                                  查看培训运营同步状态
+                                  查看社区运营同步状态
                                 </button>
                               </div>
                             </div>

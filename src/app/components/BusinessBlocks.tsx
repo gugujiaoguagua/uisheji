@@ -151,9 +151,10 @@ const impactMeta = {
   low: { tone: "blue" as const, label: "已纳入" },
 };
 
-function getGridClass(columns: 2 | 3 | 4) {
+function getGridClass(columns: 2 | 3 | 4 | 5) {
   if (columns === 2) return "grid-cols-2";
   if (columns === 3) return "grid-cols-1 md:grid-cols-3";
+  if (columns === 5) return "grid-cols-2 md:grid-cols-5";
   return "grid-cols-2 md:grid-cols-4";
 }
 
@@ -283,7 +284,7 @@ export function QuickActionGrid({
 }: {
   items: QuickActionItem[];
   variant?: "icon" | "board";
-  columns?: 2 | 3 | 4;
+  columns?: 2 | 3 | 4 | 5;
   className?: string;
 }) {
   if (variant === "board") {

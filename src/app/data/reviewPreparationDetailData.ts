@@ -108,7 +108,7 @@ const reviewPreparationDetails: Record<string, ReviewPreparationDetail> = {
       {
         id: "r1-f3",
         title: "决定是否进入案例库",
-        owner: "培训运营",
+        owner: "社区运营",
         deadline: "本周内",
         status: "scheduled",
         note: "如果评分稳定且讲法可复用，再把优化讲稿和设计方案一起沉淀成标准案例。",
@@ -164,7 +164,7 @@ const reviewPreparationDetails: Record<string, ReviewPreparationDetail> = {
       {
         id: "r2-d3",
         title: "沉淀复用决议",
-        owner: "培训运营",
+        owner: "社区运营",
         status: "done",
         decision: "该项目正式进入案例库，可同步给培训课件、AI 陪练和后续新单会审准备页复用。",
         nextNode: "培训 / 陪练同步",
@@ -174,7 +174,7 @@ const reviewPreparationDetails: Record<string, ReviewPreparationDetail> = {
       {
         id: "r2-f1",
         title: "同步标准讲稿到新人带教",
-        owner: "培训运营",
+        owner: "社区运营",
         deadline: "已完成",
         status: "done",
         note: "已把讲稿加入新人带教素材包。",

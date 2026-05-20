@@ -36,6 +36,7 @@ import CoachTasks from "./pages/CoachTasks";
 import HistoryTimeline from "./pages/HistoryTimeline";
 import UpdateRecords from "./pages/UpdateRecords";
 import ReviewRecords from "./pages/ReviewRecords";
+import SalesFollowup from "./pages/SalesFollowup";
 import RetestMakeup from "./pages/RetestMakeup";
 import StateStandards from "./pages/StateStandards";
 import ProductBlueprint from "./pages/ProductBlueprint";
@@ -85,6 +86,7 @@ export const router = createBrowserRouter([
       { path: "workbench/collab/review/:id", Component: ReviewPreparation },
       { path: "workbench/collab/score/:id", Component: ScoreFeedback },
       { path: "workbench/collab/records", Component: ReviewRecords },
+      { path: "workbench/sales-followup", Component: SalesFollowup },
       { path: "workbench/order-review", Component: OrderReview },
       { path: "workbench/order-review/preparation/:id", Component: OrderPreparation },
       { path: "workbench/order-review/annotation/:id", Component: IssueAnnotation },

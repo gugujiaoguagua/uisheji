@@ -23,16 +23,20 @@ import {
   RotateCcw,
   BookOpen,
   WifiOff,
+  Phone,
+  MessageSquare,
 } from "lucide-react";
 import {
   useApp,
   getIdentityLabel,
   getLearnerRoleMeta,
+  getStaffRoleMeta,
   getStaffApprovalStatusMeta,
 } from "../context/AppContext";
 import { IdentityStatusBar, QuickActionGrid, TodayTaskCard } from "../components/BusinessBlocks";
 import { GlobalStateCard, type GlobalStateTone } from "../components/GlobalStateCard";
 import { appShellClass, getApprovalStatusToneClass, moduleIconToneClass } from "../lib/visualTokens";
+import { trainingStudents } from "../data/trainingTeacherData";
 
 type StudentHomeState =
   | "normal"
@@ -133,37 +137,37 @@ const staffTasks = [
   {
     id: 1,
     type: "risk",
-    title: "⚠️ 风险：3 名学员本周连续未完成新品课",
-    desc: "李明、王芳、赵强 · 下周将有产品推介活动",
+    title: "临港星河湾群人数低于 50% 目标线",
+    desc: "当前 101 / 240 · 2 天无增长 · 需补资源入口和拉新动作",
     urgency: "urgent",
-    action: "查看名单并跟进",
+    action: "查看异常看板",
     path: "/workbench/dashboard",
   },
   {
     id: 2,
     type: "sync",
-    title: "【待确认】防水产品施工规范 v3.1 更新",
-    desc: "影响：卫浴系列 4 款产品 · 需告知 12 名销售",
+    title: "群人数 / 添加微信跨表口径不一致",
+    desc: "嘉定云著销售明细与月度汇总不一致 · 先校验口径再看转化",
     urgency: "urgent",
-    action: "确认并推送",
-    path: "/workbench/info-sync",
+    action: "去数据治理",
+    path: "/workbench/content-ops",
   },
   {
     id: 3,
     type: "review",
-    title: "审单任务：张国栋订单有参数异常",
-    desc: "规格不符 · 等待工厂确认 · 已暂停生产",
+    title: "青浦悦府 QC 为 0，样板间未启动",
+    desc: "QC 目标 4 / 当前 0 · 样板间候选人和宣传节点缺失",
     urgency: "warning",
-    action: "处理异常",
-    path: "/workbench/order-review",
+    action: "拆任务闭环",
+    path: "/workbench/dashboard/tasks",
   },
   {
     id: 4,
     type: "training",
-    title: "本月培训完成率：64%（目标 80%）",
-    desc: "还差 6 人完成必修课 · 差距最大：云岚石新品",
+    title: "活动复盘模板待补 · 新人培养资料散落",
+    desc: "直播、视频号、活动筹备和复盘资料需要归到阶段培养路径",
     urgency: "warning",
-    action: "推送补训",
+    action: "看新人培养",
     path: "/workbench/content-ops",
   },
 ];
@@ -178,10 +182,39 @@ const quickLinks = {
   staff: [
     { label: "信息同步", icon: <RefreshCw size={18} />, path: "/workbench/info-sync", color: moduleIconToneClass.sales },
     { label: "审单·回流", icon: <FileCheck size={18} />, path: "/workbench/order-review", color: "bg-state-danger-soft text-state-danger" },
-    { label: "带教看板", icon: <BarChart3 size={18} />, path: "/workbench/dashboard", color: moduleIconToneClass.design },
-    { label: "培训运营", icon: <Users size={18} />, path: "/workbench/content-ops", color: moduleIconToneClass.delivery },
+    { label: "异常看板", icon: <BarChart3 size={18} />, path: "/workbench/dashboard", color: moduleIconToneClass.design },
+    { label: "社区运营", icon: <Users size={18} />, path: "/workbench/content-ops", color: moduleIconToneClass.delivery },
   ],
 };
+
+const opsQuickLinks = [
+  { label: "社区运营", icon: <Users size={18} />, path: "/workbench/content-ops", color: moduleIconToneClass.delivery },
+  { label: "异常看板", icon: <BarChart3 size={18} />, path: "/workbench/dashboard", color: moduleIconToneClass.design },
+  { label: "运营任务", icon: <ClipboardList size={18} />, path: "/workbench/dashboard/tasks", color: moduleIconToneClass.factory },
+  { label: "公司产品", icon: <RefreshCw size={18} />, path: "/workbench/info-sync", color: moduleIconToneClass.sales },
+];
+
+const designerQuickLinks = [
+  { label: "销设协同", icon: <ArrowRight size={18} />, path: "/workbench/collab", color: moduleIconToneClass.delivery },
+  { label: "AI问答", icon: <Brain size={18} />, path: "/learning/ai-qna", color: moduleIconToneClass.sales },
+  { label: "公司产品", icon: <RefreshCw size={18} />, path: "/workbench/info-sync", color: moduleIconToneClass.factory },
+  { label: "设计规范", icon: <BookOpen size={18} />, path: "/learning/design-standards", color: moduleIconToneClass.design },
+];
+
+const salesQuickLinks = [
+  { label: "客户跟进", icon: <Phone size={18} />, path: "/workbench/sales-followup", color: moduleIconToneClass.delivery },
+  { label: "建客户单", icon: <ArrowRight size={18} />, path: "/workbench/collab", color: moduleIconToneClass.sales },
+  { label: "公司产品", icon: <RefreshCw size={18} />, path: "/workbench/info-sync", color: moduleIconToneClass.factory },
+  { label: "AI问答", icon: <Brain size={18} />, path: "/learning/ai-qna", color: moduleIconToneClass.sales },
+  { label: "消息中心", icon: <MessageSquare size={18} />, path: "/messages", color: moduleIconToneClass.design },
+];
+
+const orderReviewerQuickLinks = [
+  { label: "审单任务", icon: <FileCheck size={18} />, path: "/workbench/order-review", color: "bg-state-danger-soft text-state-danger" },
+  { label: "下单准备", icon: <CheckCircle2 size={18} />, path: "/workbench/order-review/preparation/o1", color: moduleIconToneClass.sales },
+  { label: "工艺校验", icon: <Shield size={18} />, path: "/workbench/order-review/validation/o1", color: moduleIconToneClass.design },
+  { label: "回流培训", icon: <RefreshCw size={18} />, path: "/workbench/order-review/flowback/o1", color: moduleIconToneClass.delivery },
+];
 
 const staffActionBoard = [
   {
@@ -194,16 +227,16 @@ const staffActionBoard = [
   },
   {
     title: "再盯风险",
-    desc: "谁掉队了、哪一单卡住了、今天该盯谁，要先给出动作。",
-    action: "去带教看板",
+    desc: "哪个小区卡住、哪位负责人风险最高、今天要先追哪条数据，要先给出动作。",
+    action: "去异常看板",
     path: "/workbench/dashboard",
     icon: <AlertTriangle size={15} className="text-red-600" />,
     tone: "bg-red-50 border-red-100",
   },
   {
-    title: "补训与回流",
-    desc: "把售后、审单、考核问题继续回流成培训动作和标准更新。",
-    action: "去培训运营",
+    title: "社区运营闭环",
+    desc: "把资源开拓、群运营、转化跟进和新人培养串成可追踪的工作流。",
+    action: "去社区运营",
     path: "/workbench/content-ops",
     icon: <Target size={15} className="text-green-600" />,
     tone: "bg-green-50 border-green-100",
@@ -218,11 +251,245 @@ const staffActionBoard = [
   },
 ];
 
+const trainingTeacherQuickLinks = [
+  { label: "AI问答", icon: <Brain size={18} />, path: "/learning/ai-qna", color: moduleIconToneClass.sales },
+  { label: "演练评分", icon: <Dumbbell size={18} />, path: "/workbench/dashboard", color: moduleIconToneClass.design },
+  { label: "公司产品", icon: <RefreshCw size={18} />, path: "/workbench/info-sync", color: moduleIconToneClass.sales },
+  { label: "案例沉淀", icon: <BookOpen size={18} />, path: "/workbench/content-ops", color: moduleIconToneClass.delivery },
+];
+
+const trainingTeacherActionBoard = [
+  {
+    title: "先看演练",
+    desc: "今天先批 3 份新人接待流程演练，判断是否只是会背课件、还没转成现场动作。",
+    action: "去演练评分",
+    path: "/learning/ai-practice",
+    icon: <Dumbbell size={15} className="text-indigo-600" />,
+    tone: "bg-indigo-50 border-indigo-100",
+  },
+  {
+    title: "再拆补训",
+    desc: "把报价、产品工艺、需求追问这三类薄弱项拆成可执行补训任务。",
+    action: "去补训闭环",
+    path: "/learning/growth/retrain",
+    icon: <AlertTriangle size={15} className="text-red-600" />,
+    tone: "bg-red-50 border-red-100",
+  },
+  {
+    title: "回收案例",
+    desc: "把带教师傅反馈、优秀接待片段和售后复盘沉淀进案例库，避免经验只留在个人口头。",
+    action: "去案例沉淀",
+    path: "/workbench/content-ops",
+    icon: <BookOpen size={15} className="text-green-600" />,
+    tone: "bg-green-50 border-green-100",
+  },
+  {
+    title: "跟进产品",
+    desc: "新品、工艺、报价边界有变更时，要追到课件、题库、陪练场景是否同版。",
+    action: "看公司产品",
+    path: "/workbench/info-sync",
+    icon: <RefreshCw size={15} className="text-blue-600" />,
+    tone: "bg-blue-50 border-blue-100",
+  },
+];
+
+const trainingTeacherTasks = [
+  {
+    id: 1,
+    type: "practice",
+    title: "3 份新人完整接待流程演练待评分",
+    desc: "重点看开场破冰、需求追问、报价边界和服务意识，不只看是否背出知识点",
+    urgency: "urgent" as const,
+    action: "进入评分",
+    path: "/learning/ai-practice",
+  },
+  {
+    id: 2,
+    type: "retrain",
+    title: "报价与产品工艺薄弱项需拆补训",
+    desc: "带教师傅反馈：产品知识、模块报价、工艺细节仍是新人最容易卡住的前三项",
+    urgency: "urgent" as const,
+    action: "拆补训",
+    path: "/learning/growth/retrain",
+  },
+  {
+    id: 3,
+    type: "sync",
+    title: "防水规范 v3.1 公司产品更新需拆到题库和陪练",
+    desc: "课件已更新，但题库解释和 AI 陪练仍有旧口径残留，需要追齐",
+    urgency: "warning" as const,
+    action: "看产品",
+    path: "/workbench/info-sync",
+  },
+  {
+    id: 4,
+    type: "case",
+    title: "本周优秀方案讲解案例待入库",
+    desc: "设计总监复盘材料已上传，需要补齐评分点、讲解亮点和可复用话术",
+    urgency: "warning" as const,
+    action: "收案例",
+    path: "/workbench/content-ops",
+  },
+];
+
+const designerTasks = [
+  {
+    id: 1,
+    type: "collab",
+    title: "客户李总方案会审前缺防滑等级确认",
+    desc: "销售交接里只写了老人安全诉求，设计侧需要补齐卫浴区 R10/R11 选择和解释口径",
+    urgency: "urgent" as const,
+    action: "去销设协同",
+    path: "/workbench/collab",
+  },
+  {
+    id: 2,
+    type: "review",
+    title: "销售报价口径与设计方案不一致",
+    desc: "套餐内外、模块估价和方案图版本需要会审前对齐，避免客户现场听到两套说法",
+    urgency: "urgent" as const,
+    action: "看会审",
+    path: "/workbench/collab/records",
+  },
+  {
+    id: 3,
+    type: "product",
+    title: "铝套盒与皮抽面组合升级需要看完确认",
+    desc: "新品图示、适用场景和现场工艺说明会影响方案讲解，先确认再对客输出",
+    urgency: "warning" as const,
+    action: "看产品",
+    path: "/workbench/info-sync",
+  },
+  {
+    id: 4,
+    type: "standard",
+    title: "设计规范与防错清单需补到会审资料",
+    desc: "量尺异常、工艺限制和报价一致性要在会审资料里留痕，减少后续返工",
+    urgency: "warning" as const,
+    action: "看规范",
+    path: "/learning/design-standards",
+  },
+];
+
+const salesTasks = [
+  {
+    id: 1,
+    type: "followup",
+    title: "李总预算边界今天 16:00 前确认",
+    desc: "客户关注老人防滑和总价，先确认 R10 防滑款接受度，再把预算上限同步给设计师",
+    urgency: "urgent" as const,
+    action: "去跟进",
+    path: "/workbench/sales-followup",
+  },
+  {
+    id: 2,
+    type: "quote",
+    title: "张女士全屋瓷砖单缺一次报价回访",
+    desc: "设计方案已同步，客户还未确认大规格哑光砖报价，今天需要补报价解释和异议记录",
+    urgency: "urgent" as const,
+    action: "补回访",
+    path: "/workbench/sales-followup",
+  },
+  {
+    id: 3,
+    type: "product",
+    title: "防水施工规范 v3.1 需要看完确认",
+    desc: "新禁用材料和卫浴厚度要求会影响门店讲解，确认后再用于客户解释",
+    urgency: "warning" as const,
+    action: "看产品",
+    path: "/workbench/info-sync",
+  },
+  {
+    id: 4,
+    type: "collab",
+    title: "临港星河湾客户单待补现场照片",
+    desc: "设计师已接收需求，但还缺现场照片和客户预算说明，补齐后才能继续方案推进",
+    urgency: "warning" as const,
+    action: "补客户单",
+    path: "/workbench/collab/request/r1",
+  },
+];
+
+const orderReviewerTasks = [
+  {
+    id: 1,
+    type: "dimension",
+    title: "张国栋订单规格与设计图不一致，需先冻结并标注",
+    desc: "审单访谈里尺寸/规格是最高频错误，先核对签字图纸、订单系统和生产数据三方口径。",
+    urgency: "urgent" as const,
+    action: "去标注异常",
+    path: "/workbench/order-review/annotation/o1",
+  },
+  {
+    id: 2,
+    type: "big-order",
+    title: "大单/混油订单签字链路需复核",
+    desc: "混油单或 50 万以上订单必须核对店长、设计总监、设计师、销售签字，缺签禁止下单/审单。",
+    urgency: "urgent" as const,
+    action: "查下单准备",
+    path: "/workbench/order-review/preparation/o1",
+  },
+  {
+    id: 3,
+    type: "color",
+    title: "颜色与材质一致性待二次校验",
+    desc: "水晶板、双饰面、暴富色等容易在软件里误判，需要和签字图纸、备注文件一起看。",
+    urgency: "warning" as const,
+    action: "去工艺校验",
+    path: "/workbench/order-review/validation/o1",
+  },
+  {
+    id: 4,
+    type: "flowback",
+    title: "规格核对错误需要回流到培训和题库",
+    desc: "不是只处理当前异常单，还要把尺寸、颜色、结构格局三类高频错回流成新人防错训练。",
+    urgency: "warning" as const,
+    action: "做回流计划",
+    path: "/workbench/order-review/flowback/o1",
+  },
+];
+
+const salesUpdates: UpdateItem[] = [
+  { title: "李总预算边界今天 16:00 前必须回写", time: "今天", type: "system" },
+  { title: "防水施工规范 v3.1 已推到公司产品页", time: "昨天", type: "spec" },
+  { title: "张女士报价异议需要补一次回访记录", time: "昨天", type: "qa" },
+];
+
+const orderReviewerUpdates: UpdateItem[] = [
+  { title: "审单访谈已整理：尺寸、颜色、结构是前三类高频错误", time: "今天", type: "system" },
+  { title: "加急单制度：审单部门负责判定个人原因加急", time: "制度", type: "spec" },
+  { title: "大单/混油订单管控：缺签禁止下单/审单", time: "制度", type: "spec" },
+];
+
+const trainingTeacherUpdates: UpdateItem[] = [
+  { title: "带教师傅访谈已整理：练要大于学，演练评分需前置", time: "今天", type: "system" },
+  { title: "云屏考核打分表待同步到新人评分规则", time: "昨天", type: "qa" },
+  { title: "防水施工规范 v3.1 已发布，需追齐题库解释", time: "昨天", type: "spec" },
+];
+
+const trainingTeacherTrainees = [
+  { name: "李明", status: "高风险", detail: "报价逻辑断点多", color: "text-[#DC2626]", bg: "bg-red-50" },
+  { name: "王芳", status: "需补练", detail: "需求追问浅", color: "text-[#B45309]", bg: "bg-amber-50" },
+  { name: "陈伟", status: "可上客", detail: "流程演练通过", color: "text-[#16A34A]", bg: "bg-green-50" },
+];
+
+const trainingTeacherLoopEntries = [
+  { title: "演练待评分", desc: "3 份完整接待流程需要今天给出评分和反馈。" },
+  { title: "补训待派发", desc: "报价、工艺、需求追问三类薄弱项需要拆成补训动作。" },
+  { title: "案例待入库", desc: "优秀方案讲解视频需补齐亮点、话术和适用场景。" },
+];
+
 function getUpdateBadge(type: UpdateType) {
   if (type === "product") return "bg-brand-soft text-brand";
   if (type === "spec") return "bg-state-warning-soft text-state-warning-foreground";
   if (type === "qa") return "bg-state-success-soft text-state-success-foreground";
   return "bg-gray-100 text-gray-500";
+}
+
+function trainingStudentStatusTone(status: string) {
+  if (status === "红色") return "bg-red-50 text-[#DC2626]";
+  if (status === "需跟进") return "bg-amber-50 text-[#B45309]";
+  return "bg-green-50 text-[#15803D]";
 }
 
 const studentHomeStates: Record<StudentHomeState, StudentStateConfig> = {
@@ -744,12 +1011,19 @@ const learnerRoleHomeStates = {
 } satisfies Record<string, StudentStateConfig>;
 
 export default function Home() {
-  const { user, currentIdentity } = useApp();
+  const { user, currentIdentity, unreadMessages } = useApp();
   const navigate = useNavigate();
   const isStaff = currentIdentity === "staff";
   const [studentHomeState, setStudentHomeState] = useState<StudentHomeState>("normal");
   const selectedLearnerRole = user?.learnerRole ?? "sales";
   const learnerRoleMeta = getLearnerRoleMeta(selectedLearnerRole);
+  const selectedStaffRole = user?.staffRole ?? "training_teacher";
+  const staffRoleMeta = getStaffRoleMeta(selectedStaffRole);
+  const isTrainingTeacher = isStaff && selectedStaffRole === "training_teacher";
+  const isOpsStaff = isStaff && selectedStaffRole === "ops";
+  const isDesignerStaff = isStaff && selectedStaffRole === "designer";
+  const isSalesStaff = isStaff && selectedStaffRole === "sales";
+  const isOrderReviewerStaff = isStaff && selectedStaffRole === "order_reviewer";
   const today = new Date().toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "long" });
   const approvalMeta = user ? getStaffApprovalStatusMeta(user.staffApprovalStatus) : null;
   const currentStudentState = useMemo(
@@ -767,7 +1041,52 @@ export default function Home() {
   const homeDesktopContainerClass = showHomeRightSidebar ? "max-w-6xl" : "max-w-6xl xl:max-w-[1240px]";
   const homeDesktopGridClass = showHomeRightSidebar ? "grid md:grid-cols-3 gap-4" : "grid gap-4";
   const homePrimaryColumnClass = showHomeRightSidebar ? "md:col-span-2 space-y-4" : "space-y-4";
-
+  const activeStaffQuickLinks = isTrainingTeacher
+    ? trainingTeacherQuickLinks
+    : isOpsStaff
+      ? opsQuickLinks
+      : isDesignerStaff
+        ? designerQuickLinks
+        : isSalesStaff
+          ? salesQuickLinks
+          : isOrderReviewerStaff
+            ? orderReviewerQuickLinks
+          : quickLinks.staff;
+  const activeStaffActionBoard = isTrainingTeacher ? trainingTeacherActionBoard : staffActionBoard;
+  const activeStaffTasks = isTrainingTeacher
+    ? trainingTeacherTasks
+    : isDesignerStaff
+      ? designerTasks
+      : isSalesStaff
+        ? salesTasks
+        : isOrderReviewerStaff
+          ? orderReviewerTasks
+        : staffTasks;
+  const activeStaffUpdates = isTrainingTeacher
+    ? trainingTeacherUpdates
+    : isSalesStaff
+      ? salesUpdates
+      : isOrderReviewerStaff
+        ? orderReviewerUpdates
+    : [
+        { title: "云岚石·暖冬系列防滑参数更新", time: "2小时前", type: "product" as UpdateType },
+        { title: "防水施工规范 v3.1 发布", time: "昨天", type: "spec" as UpdateType },
+        { title: "客户异议处理话术库新增 5 条", time: "2天前", type: "qa" as UpdateType },
+      ];
+  const activeStaffMembers = isTrainingTeacher
+    ? trainingTeacherTrainees
+    : [
+        { name: "李明", status: "风险", detail: "3天未学习", color: "text-[#DC2626]", bg: "bg-red-50" },
+        { name: "王芳", status: "预警", detail: "考核得分下降", color: "text-[#F59E0B]", bg: "bg-amber-50" },
+        { name: "陈伟", status: "正常", detail: "完成率 90%", color: "text-[#16A34A]", bg: "bg-green-50" },
+      ];
+  const activeLoopEntries = isTrainingTeacher
+    ? trainingTeacherLoopEntries
+    : [
+        { title: "补训任务待发起", desc: "6 人未完成新品课，建议先推送重学" },
+        { title: "售后问题待回流", desc: "2 条高频问题尚未沉淀到培训标准" },
+        { title: "审批事项待确认", desc: "1 条身份/权限申请待处理" },
+      ];
   return (
 
 
@@ -779,12 +1098,34 @@ export default function Home() {
             <div>
               <p className="text-white/70 text-sm mb-1">{today}</p>
               <h1 className="text-white text-xl font-semibold">
-                {isStaff ? `${user?.name}，今天先处理风险和待办` : `${user?.name}，${currentStudentState.heroTitle}`}
+                {isStaff
+                  ? isTrainingTeacher
+                    ? `${user?.name}，今天先看新人培训事项`
+                      : isOpsStaff
+                        ? `${user?.name}，今天先看运营风险和动作`
+                        : isDesignerStaff
+                          ? `${user?.name}，今天先看方案协同和会审事项`
+                          : isSalesStaff
+                            ? `${user?.name}，今天先跟客户和报价`
+                            : isOrderReviewerStaff
+                              ? `${user?.name}，今天先拦截订单风险`
+                          : `${user?.name}，今天先处理风险和待办`
+                  : `${user?.name}，${currentStudentState.heroTitle}`}
               </h1>
               {(isStaff || homeSectionVisibility.studentHeroDescription) && (
                 <p className="text-white/80 text-sm mt-2 leading-relaxed">
                   {isStaff
-                    ? `工作人员视角 · 主身份${user ? getIdentityLabel(user.primaryIdentity) : "工作人员"} · 首页先给动作，不先给图表`
+                    ? isTrainingTeacher
+                      ? `${staffRoleMeta.label}视角 · 主身份${user ? getIdentityLabel(user.primaryIdentity) : "工作人员"} · 首页只显示培养相关事项`
+                      : isOpsStaff
+                        ? `${staffRoleMeta.label}视角 · 主身份${user ? getIdentityLabel(user.primaryIdentity) : "工作人员"} · 首页只显示资源、社群、转化、数据口径相关事项`
+                        : isDesignerStaff
+                          ? `${staffRoleMeta.label}视角 · 主身份${user ? getIdentityLabel(user.primaryIdentity) : "工作人员"} · 首页只显示方案讲解、图纸准备、会审反馈和设计协同相关事项`
+                          : isSalesStaff
+                            ? `${staffRoleMeta.label}视角 · 主身份${user ? getIdentityLabel(user.primaryIdentity) : "工作人员"} · 首页只显示客户跟进、报价推进、销设协同和公司产品相关事项`
+                            : isOrderReviewerStaff
+                              ? `${staffRoleMeta.label}视角 · 主身份${user ? getIdentityLabel(user.primaryIdentity) : "工作人员"} · 首页只显示订单校验、异常标注、责任归因和回流培训事项`
+                            : `${staffRoleMeta.label}视角 · 主身份${user ? getIdentityLabel(user.primaryIdentity) : "工作人员"} · 首页只显示当前岗位相关事项`
                     : `学员视角 · 当前学习身份：${learnerRoleMeta.label} · ${currentStudentState.heroDesc}`}
                 </p>
               )}
@@ -795,31 +1136,17 @@ export default function Home() {
               className="relative bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-colors"
             >
               <Bell size={18} />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#DC2626] text-white text-xs rounded-full flex items-center justify-center">5</span>
+              {unreadMessages > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#DC2626] text-white text-xs rounded-full flex items-center justify-center">{unreadMessages}</span>
+              )}
             </button>
           </div>
 
-          {!isStaff ? (
+          {!isStaff && (
             <div className="grid grid-cols-3 gap-2 mt-4">
               {currentStudentState.stats.map((stat, i) => (
                 <div key={i} className="bg-white/10 rounded-lg px-3 py-3">
                   <div className="text-xl font-bold text-white">
-                    {stat.value}
-                    <span className="text-sm font-normal ml-1">{stat.sub}</span>
-                  </div>
-                  <div className="text-white/70 text-sm mt-1">{stat.label}</div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-2 mt-4">
-              {[
-                { label: "今日待办", value: "4", sub: "项", urgent: true },
-                { label: "风险学员", value: "3", sub: "人", urgent: true },
-                { label: "团队完成率", value: "64", sub: "%", urgent: false },
-              ].map((stat, i) => (
-                <div key={i} className={`rounded-lg px-3 py-3 ${stat.urgent ? "bg-red-500/20 border border-red-400/30" : "bg-white/10"}`}>
-                  <div className={`text-xl font-bold ${stat.urgent ? "text-red-300" : "text-white"}`}>
                     {stat.value}
                     <span className="text-sm font-normal ml-1">{stat.sub}</span>
                   </div>
@@ -841,10 +1168,11 @@ export default function Home() {
                   <Sparkles size={15} className="text-[#2F5FD0]" />
                   <span className="text-base font-medium text-gray-900">{isStaff ? "快捷入口" : "学习快捷入口"}</span>
                 </div>
-                <span className="text-sm text-gray-400">{isStaff ? "同一系统内优先展示工作动作" : "同一系统内优先展示学习动作"}</span>
+                <span className="text-sm text-gray-400">{isStaff ? `${staffRoleMeta.label}优先动作` : "同一系统内优先展示学习动作"}</span>
               </div>
               <QuickActionGrid
-                items={quickLinks[isStaff ? "staff" : "student"].map((link) => ({
+                columns={isStaff && isSalesStaff ? 5 : 4}
+                items={(isStaff ? activeStaffQuickLinks : quickLinks.student).map((link) => ({
                   label: link.label,
                   icon: link.icon,
                   colorClassName: link.color,
@@ -919,11 +1247,11 @@ export default function Home() {
                 <div className="bg-white rounded-xl p-4 shadow-sm">
                   <div className="flex items-center gap-2 mb-3 flex-wrap">
                     <Target size={16} className="text-[#2F5FD0]" />
-                    <span className="text-base font-medium text-gray-900">今日动作面板</span>
-                    <span className="text-sm text-gray-400">先给动作，再给数据</span>
+                    <span className="text-base font-medium text-gray-900">{isTrainingTeacher ? "培养动作面板" : "今日动作面板"}</span>
+                    <span className="text-sm text-gray-400">{isTrainingTeacher ? "先看演练，再拆补训" : "先给动作，再给数据"}</span>
                   </div>
                   <div className="grid md:grid-cols-3 gap-3">
-                    {staffActionBoard.map((item) => (
+                    {activeStaffActionBoard.map((item) => (
                       <button
                         key={item.title}
                         onClick={() => navigate(item.path)}
@@ -948,21 +1276,61 @@ export default function Home() {
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Flame size={16} className="text-[#DC2626]" />
-                  <span className="text-sm font-medium text-gray-900">{isStaff ? "今日待办 & 风险预警" : currentStudentState.taskTitle}</span>
+                  {isTrainingTeacher ? <Users size={16} className="text-[#2F5FD0]" /> : isDesignerStaff ? <FileCheck size={16} className="text-[#2F5FD0]" /> : isSalesStaff ? <Phone size={16} className="text-[#2F5FD0]" /> : isOrderReviewerStaff ? <Shield size={16} className="text-[#2F5FD0]" /> : <Flame size={16} className="text-[#DC2626]" />}
+                  <span className="text-sm font-medium text-gray-900">{isStaff ? (isTrainingTeacher ? "学员看板" : isDesignerStaff ? "设计协同待办" : isSalesStaff ? "销售今日待办" : isOrderReviewerStaff ? "审单今日待办" : "今日待办 & 风险预警") : currentStudentState.taskTitle}</span>
                 </div>
                 <button
                   type="button"
-                  onClick={() => navigate(isStaff ? "/workbench/dashboard/tasks" : "/learning/growth")}
+                  onClick={() => navigate(isStaff ? (isTrainingTeacher ? "/workbench/dashboard" : isDesignerStaff ? "/workbench/collab" : isSalesStaff ? "/workbench/sales-followup" : isOrderReviewerStaff ? "/workbench/order-review" : "/workbench/dashboard/tasks") : "/learning/growth")}
                   className="text-xs text-[#2F5FD0] hover:text-[#2550B8] flex items-center gap-0.5"
                 >
-                  全部 <ChevronRight size={12} />
+                  {isTrainingTeacher ? "完整看板" : "全部"} <ChevronRight size={12} />
                 </button>
               </div>
 
+              {isStaff && isTrainingTeacher ? (
+                <div className="grid lg:grid-cols-2 gap-3 p-4">
+                  {trainingStudents.map((student) => {
+                    const weakestItem = student.assessmentItems.reduce((min, item) => (item.score < min.score ? item : min), student.assessmentItems[0]);
+                    return (
+                      <button
+                        key={student.id}
+                        onClick={() => navigate("/workbench/dashboard")}
+                        className="rounded-xl border border-gray-200 bg-[#FAFBFC] p-4 text-left hover:border-[#D9E5FF] hover:bg-[#F7FAFF] transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-medium text-gray-900">{student.name}</span>
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${trainingStudentStatusTone(student.status)}`}>{student.status}</span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">{student.cohort} · {student.stage}</p>
+                          </div>
+                          <div className={student.score < 65 ? "text-2xl font-bold text-[#DC2626]" : "text-2xl font-bold text-[#2F5FD0]"}>
+                            {student.score}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 mt-3">
+                          {student.assessmentItems.slice(0, 4).map((item) => (
+                            <div key={item.label} className="rounded-lg bg-white border border-gray-100 px-2.5 py-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-500">{item.label}</span>
+                                <span className={item.score < 60 ? "text-xs font-bold text-[#DC2626]" : item.score < 75 ? "text-xs font-bold text-[#F59E0B]" : "text-xs font-bold text-[#16A34A]"}>
+                                  {item.score}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-3 line-clamp-1">最低项：{weakestItem.label} · {weakestItem.evidence}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
               <div className="divide-y divide-gray-50">
                 {isStaff ? (
-                  staffTasks.map((task) => (
+                  activeStaffTasks.map((task) => (
                     <TodayTaskCard
                       key={task.id}
                       title={task.title}
@@ -1005,6 +1373,7 @@ export default function Home() {
                   </div>
                 )}
               </div>
+              )}
             </div>
 
             {!isStaff && homeSectionVisibility.studentGrowthReminder && (
@@ -1039,19 +1408,8 @@ export default function Home() {
                   <span className="text-sm font-medium text-gray-900">重要更新</span>
                 </div>
                 <div className="divide-y divide-gray-50">
-                  {(isStaff ? [
-                    { title: "云岚石·暖冬系列防滑参数更新", time: "2小时前", type: "product" as UpdateType },
-                    { title: "防水施工规范 v3.1 发布", time: "昨天", type: "spec" as UpdateType },
-                    { title: "客户异议处理话术库新增 5 条", time: "2天前", type: "qa" as UpdateType },
-                  ] : currentStudentState.updates).length > 0 ? (
-                    (isStaff
-                      ? [
-                          { title: "云岚石·暖冬系列防滑参数更新", time: "2小时前", type: "product" as UpdateType },
-                          { title: "防水施工规范 v3.1 发布", time: "昨天", type: "spec" as UpdateType },
-                          { title: "客户异议处理话术库新增 5 条", time: "2天前", type: "qa" as UpdateType },
-                        ]
-                      : currentStudentState.updates
-                    ).map((update, i) => (
+                  {(isStaff ? activeStaffUpdates : currentStudentState.updates).length > 0 ? (
+                    (isStaff ? activeStaffUpdates : currentStudentState.updates).map((update, i) => (
                       <button
                         key={`${update.title}-${i}`}
                         type="button"
@@ -1094,13 +1452,9 @@ export default function Home() {
                   <div className="bg-white rounded-xl p-4 shadow-sm">
                     <div className="flex items-center gap-2 mb-3">
                       <Users size={14} className="text-[#2F5FD0]" />
-                      <span className="text-sm font-medium text-gray-900">团队本周状态</span>
+                      <span className="text-sm font-medium text-gray-900">{isTrainingTeacher ? "学员本周状态" : "团队本周状态"}</span>
                     </div>
-                    {[
-                      { name: "李明", status: "风险", detail: "3天未学习", color: "text-[#DC2626]", bg: "bg-red-50" },
-                      { name: "王芳", status: "预警", detail: "考核得分下降", color: "text-[#F59E0B]", bg: "bg-amber-50" },
-                      { name: "陈伟", status: "正常", detail: "完成率 90%", color: "text-[#16A34A]", bg: "bg-green-50" },
-                    ].map((member, i) => (
+                    {activeStaffMembers.map((member, i) => (
                       <div key={i} className="flex items-center gap-2 mb-2">
                         <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-600">{member.name[0]}</div>
                         <div className="flex-1 min-w-0">
@@ -1111,10 +1465,10 @@ export default function Home() {
                       </div>
                     ))}
                     <button
-                      onClick={() => navigate("/workbench/dashboard")}
+                      onClick={() => navigate(isTrainingTeacher ? "/learning/growth" : "/workbench/dashboard")}
                       className="w-full mt-2 text-xs text-[#2F5FD0] hover:text-[#2550B8] flex items-center justify-center gap-1"
                     >
-                      查看带教看板 <ChevronRight size={12} />
+                      {isTrainingTeacher ? "查看学员画像" : "查看异常看板"} <ChevronRight size={12} />
                     </button>
                   </div>
                 )}
@@ -1124,14 +1478,10 @@ export default function Home() {
                   <div className="bg-white rounded-xl p-4 shadow-sm">
                     <div className="flex items-center gap-2 mb-3">
                       <CheckCircle2 size={14} className="text-[#16A34A]" />
-                      <span className="text-base font-medium text-gray-900">补学与闭环入口</span>
+                      <span className="text-base font-medium text-gray-900">{isTrainingTeacher ? "培养闭环入口" : "补学与闭环入口"}</span>
                     </div>
                     <div className="space-y-2">
-                      {[
-                        { title: "补训任务待发起", desc: "6 人未完成新品课，建议先推送重学" },
-                        { title: "售后问题待回流", desc: "2 条高频问题尚未沉淀到培训标准" },
-                        { title: "审批事项待确认", desc: "1 条身份/权限申请待处理" },
-                      ].map((item) => (
+                      {activeLoopEntries.map((item) => (
                         <div key={item.title} className="rounded-lg bg-[#F5F7FA] p-3.5">
                           <p className="text-sm font-medium text-gray-800">{item.title}</p>
                           <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">{item.desc}</p>

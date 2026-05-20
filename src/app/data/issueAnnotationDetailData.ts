@@ -64,7 +64,7 @@ const issueAnnotationDetails: Record<string, IssueAnnotationDetail> = {
       {
         id: "o1-h4",
         title: "进入培训回流待发布",
-        actor: "培训运营",
+        actor: "社区运营",
         time: "2024-01-15 17:30",
         status: "current",
         detail: "已确认纳入规格核对补训案例，等待课件、题库和陪练场景一起发布。",
@@ -82,14 +82,14 @@ const issueAnnotationDetails: Record<string, IssueAnnotationDetail> = {
       {
         id: "o1-f2",
         from: "销设协同",
-        to: "培训运营",
+        to: "社区运营",
         status: "done",
         reason: "问题已不是单张订单特例，需要沉淀成规格核对标准案例。",
         expectation: "补一条规格冲突课件案例，并同步题库与 AI 陪练。",
       },
       {
         id: "o1-f3",
-        from: "培训运营",
+        from: "社区运营",
         to: "信息同步中心",
         status: "pending",
         reason: "门店和设计都要收到统一版本字段要求，避免继续沿用旧图纸。",
@@ -146,7 +146,7 @@ const issueAnnotationDetails: Record<string, IssueAnnotationDetail> = {
       {
         id: "o2-h3",
         title: "锁定旧材料口径",
-        actor: "培训运营",
+        actor: "社区运营",
         time: "2024-01-14 13:30",
         status: "current",
         detail: "先停止旧版材料解释继续流转，再排查题库和陪练中残留内容。",
@@ -164,14 +164,14 @@ const issueAnnotationDetails: Record<string, IssueAnnotationDetail> = {
       {
         id: "o2-f2",
         from: "信息同步中心",
-        to: "培训运营",
+        to: "社区运营",
         status: "done",
         reason: "确认旧知识残留后，需要同步更新课件、题库和陪练场景。",
         expectation: "完成新版规范重学和复测推送。",
       },
       {
         id: "o2-f3",
-        from: "培训运营",
+        from: "社区运营",
         to: "售后模板维护",
         status: "risk",
         reason: "售后模板没写知识版本字段，后续仍可能难以界定责任。",
@@ -262,7 +262,7 @@ const issueAnnotationDetails: Record<string, IssueAnnotationDetail> = {
       {
         id: "o4-h2",
         title: "固定 R9 / R10 证据",
-        actor: "培训运营",
+        actor: "社区运营",
         time: "2024-01-12 19:20",
         status: "done",
         detail: "整理报价单、现场照片和销售回访记录，锁定湿区推荐标准。",
@@ -280,14 +280,14 @@ const issueAnnotationDetails: Record<string, IssueAnnotationDetail> = {
       {
         id: "o4-f1",
         from: "售后回流",
-        to: "培训运营",
+        to: "社区运营",
         status: "done",
         reason: "问题已经明确是参数理解偏差，需要转成训练案例。",
         expectation: "补湿区 / 干区等级训练内容。",
       },
       {
         id: "o4-f2",
-        from: "培训运营",
+        from: "社区运营",
         to: "店长 / 带教",
         status: "done",
         reason: "这类偏差需要对具体销售做跟岗复盘，而不仅是统一发通知。",
@@ -322,7 +322,7 @@ const issueAnnotationDetails: Record<string, IssueAnnotationDetail> = {
       {
         id: "o4-a3",
         node: "复测结果回写",
-        owner: "培训运营",
+        owner: "社区运营",
         status: "pending",
         time: "待复测",
         note: "待补完参数类复测结果后，回写到带教记录与错误库。",

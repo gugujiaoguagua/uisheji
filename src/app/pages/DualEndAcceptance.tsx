@@ -159,7 +159,7 @@ const groups: MappingGroup[] = [
         canChange: ["历史记录可折叠", "当前选中项单独展开", "对照区可减列"],
       },
       {
-        title: "培训运营 / 版本管理",
+        title: "社区运营 / 版本管理",
         phase: "P0",
         path: "/workbench/content-ops",
         strategy: "desktopLite",
@@ -189,7 +189,7 @@ const groups: MappingGroup[] = [
         canChange: ["列表详情可改单页推进", "历史链路可延后", "附加材料可折叠"],
       },
       {
-        title: "带教看板 / 风险名单 / 带教任务",
+        title: "异常看板 / 风险名单 / 运营任务",
         phase: "P1",
         path: "/workbench/dashboard",
         strategy: "desktopLite",

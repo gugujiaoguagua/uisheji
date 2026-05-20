@@ -29,7 +29,7 @@ export default function VersionManagement() {
             onClick={() => navigate("/workbench/content-ops")}
             className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-3"
           >
-            <ArrowLeft size={16} /> 返回培训运营
+            <ArrowLeft size={16} /> 返回社区运营
           </button>
 
           <div className="flex items-start justify-between gap-3 flex-wrap">

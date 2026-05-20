@@ -288,7 +288,7 @@ export default function AfterSaleAttribution() {
                   onClick={() => navigate("/workbench/content-ops")}
                   className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm transition-colors"
                 >
-                  去培训运营同步模板
+                  去社区运营同步模板
                 </button>
                 <button
                   onClick={() => navigate("/workbench/info-sync")}

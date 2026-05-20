@@ -14,6 +14,7 @@ import {
   Brain,
   Dumbbell,
   ClipboardList,
+  CheckCircle2,
   TrendingUp,
   RefreshCw,
   Layers,
@@ -24,11 +25,13 @@ import {
   LogOut,
   X,
   Shield,
+  Phone,
 } from "lucide-react";
 import {
   useApp,
   getIdentityLabel,
   getLearnerRoleMeta,
+  getStaffRoleMeta,
   getStaffApprovalStatusMeta,
 } from "../context/AppContext";
 import { appActionClass, appShellClass, appSurfaceClass, getApprovalStatusToneClass } from "../lib/visualTokens";
@@ -68,7 +71,7 @@ const navItems: NavItem[] = [
     path: "/workbench",
     children: [
       { key: "workbench-home", label: "今日待办", path: "/workbench", icon: <ClipboardList size={16} /> },
-      { key: "info-sync", label: "信息同步中心", path: "/workbench/info-sync", icon: <RefreshCw size={16} /> },
+      { key: "info-sync", label: "公司产品", path: "/workbench/info-sync", icon: <RefreshCw size={16} /> },
       { key: "content-ops", label: "社区运营", path: "/workbench/content-ops", icon: <Layers size={16} /> },
       { key: "collab", label: "销售-设计协同", path: "/workbench/collab", icon: <ArrowLeftRight size={16} /> },
       { key: "order-review", label: "审单·回流", path: "/workbench/order-review", icon: <FileCheck size={16} /> },
@@ -128,9 +131,87 @@ export function Layout() {
   };
 
   const isStaff = currentIdentity === "staff";
+  const selectedStaffRole = user?.staffRole ?? "training_teacher";
+  const isTrainingTeacher = isStaff && selectedStaffRole === "training_teacher";
+  const isOpsStaff = isStaff && selectedStaffRole === "ops";
+  const isDesignerStaff = isStaff && selectedStaffRole === "designer";
+  const isSalesStaff = isStaff && selectedStaffRole === "sales";
+  const isOrderReviewerStaff = isStaff && selectedStaffRole === "order_reviewer";
   const learnerRoleMeta = getLearnerRoleMeta(user?.learnerRole);
+  const staffRoleMeta = getStaffRoleMeta(selectedStaffRole);
   const approvalMeta = user ? getStaffApprovalStatusMeta(user.staffApprovalStatus) : null;
   const identityChoices = user?.availableIdentities ?? [];
+  const effectiveNavItems = isTrainingTeacher
+    ? navItems.map((item) => {
+        if (item.key !== "workbench") return item;
+        return {
+          ...item,
+          children: [
+            { key: "workbench-home", label: "培训待办", path: "/workbench", icon: <ClipboardList size={16} /> },
+            { key: "training-products", label: "公司产品", path: "/workbench/info-sync", icon: <RefreshCw size={16} /> },
+            { key: "training-cases", label: "案例沉淀", path: "/workbench/content-ops", icon: <Layers size={16} /> },
+            { key: "training-dashboard", label: "学员看板", path: "/workbench/dashboard", icon: <BarChart3 size={16} /> },
+          ],
+        };
+      })
+    : isOpsStaff
+      ? navItems.map((item) => {
+          if (item.key !== "workbench") return item;
+          return {
+            ...item,
+            children: [
+              { key: "workbench-home", label: "运营待办", path: "/workbench", icon: <ClipboardList size={16} /> },
+              { key: "content-ops", label: "社区运营", path: "/workbench/content-ops", icon: <Layers size={16} /> },
+              { key: "dashboard", label: "异常看板", path: "/workbench/dashboard", icon: <BarChart3 size={16} /> },
+              { key: "ops-tasks", label: "运营任务", path: "/workbench/dashboard/tasks", icon: <CheckCircle2 size={16} /> },
+              { key: "info-sync", label: "公司产品", path: "/workbench/info-sync", icon: <RefreshCw size={16} /> },
+            ],
+          };
+        })
+      : isDesignerStaff
+        ? navItems.map((item) => {
+            if (item.key !== "workbench") return item;
+            return {
+              ...item,
+              children: [
+                { key: "workbench-home", label: "设计待办", path: "/workbench", icon: <ClipboardList size={16} /> },
+                { key: "collab", label: "销售设计师协同", path: "/workbench/collab", icon: <ArrowLeftRight size={16} /> },
+                { key: "review-records", label: "方案会审", path: "/workbench/collab/records", icon: <FileCheck size={16} /> },
+                { key: "design-products", label: "公司产品", path: "/workbench/info-sync", icon: <RefreshCw size={16} /> },
+              ],
+            };
+          })
+        : isSalesStaff
+          ? navItems.map((item) => {
+              if (item.key !== "workbench") return item;
+              return {
+                ...item,
+                children: [
+                  { key: "workbench-home", label: "销售待办", path: "/workbench", icon: <ClipboardList size={16} /> },
+                  { key: "sales-followup", label: "客户跟进", path: "/workbench/sales-followup", icon: <Phone size={16} /> },
+                  { key: "collab", label: "销售设计师协同", path: "/workbench/collab", icon: <ArrowLeftRight size={16} /> },
+                  { key: "sales-review-records", label: "方案会审", path: "/workbench/collab/records", icon: <FileCheck size={16} /> },
+                  { key: "sales-products", label: "公司产品", path: "/workbench/info-sync", icon: <RefreshCw size={16} /> },
+                  { key: "sales-qna", label: "AI问答", path: "/learning/ai-qna", icon: <Brain size={16} /> },
+                ],
+              };
+            })
+          : isOrderReviewerStaff
+            ? navItems.map((item) => {
+                if (item.key !== "workbench") return item;
+                return {
+                  ...item,
+                  children: [
+                    { key: "workbench-home", label: "审单待办", path: "/workbench", icon: <ClipboardList size={16} /> },
+                    { key: "order-review", label: "审单任务", path: "/workbench/order-review", icon: <FileCheck size={16} /> },
+                    { key: "order-prep", label: "下单准备", path: "/workbench/order-review/preparation/o1", icon: <CheckCircle2 size={16} /> },
+                    { key: "order-validation", label: "工艺校验", path: "/workbench/order-review/validation/o1", icon: <Shield size={16} /> },
+                    { key: "order-flowback", label: "回流培训", path: "/workbench/order-review/flowback/o1", icon: <RefreshCw size={16} /> },
+                    { key: "order-products", label: "公司产品", path: "/workbench/info-sync", icon: <GitBranch size={16} /> },
+                  ],
+                };
+              })
+    : navItems;
 
   return (
     <div className="flex h-screen bg-[#F5F7FA] overflow-hidden">
@@ -147,7 +228,7 @@ export function Layout() {
         </div>
 
         <nav className="flex-1 py-3 overflow-y-auto">
-          {navItems.map((item) => {
+          {effectiveNavItems.map((item) => {
             const isActive = activeNav === item.key;
             const isExpanded = expandedNav === item.key || (isActive && item.children);
 
@@ -212,7 +293,7 @@ export function Layout() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm text-white truncate">{user?.name}</div>
-              <div className="text-sm text-white/60 truncate">{isStaff ? user?.role : `学习身份：${learnerRoleMeta.label}`}</div>
+              <div className="text-sm text-white/60 truncate">{isStaff ? staffRoleMeta.roleTitle : `学习身份：${learnerRoleMeta.label}`}</div>
               {user && (
                 <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
                   <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/85">
@@ -384,7 +465,7 @@ export function Layout() {
 
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 h-16">
           <div className="flex items-center h-full">
-            {navItems.map((item) => {
+            {effectiveNavItems.map((item) => {
               const isActive = activeNav === item.key;
               return (
                 <NavLink

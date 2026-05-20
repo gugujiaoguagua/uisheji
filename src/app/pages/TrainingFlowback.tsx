@@ -92,7 +92,7 @@ export default function TrainingFlowback() {
                 onClick={() => navigate("/workbench/content-ops")}
                 className="px-3 py-1.5 rounded-lg bg-[#2F5FD0] hover:bg-[#2550B8] text-white text-xs transition-colors"
               >
-                去培训运营执行
+                去社区运营执行
               </button>
             </div>
           </div>
@@ -276,7 +276,7 @@ export default function TrainingFlowback() {
                   onClick={() => navigate("/workbench/content-ops")}
                   className="w-full py-2.5 rounded-xl bg-[#2F5FD0] hover:bg-[#2550B8] text-white text-sm transition-colors"
                 >
-                  去培训运营执行回流
+                  去社区运营执行回流
                 </button>
                 <button
                   onClick={() => navigate("/learning/growth/retest-makeup")}

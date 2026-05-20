@@ -52,7 +52,7 @@ export default function InfoSyncDetail() {
               onClick={() => navigate("/workbench/content-ops")}
               className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600 hover:bg-gray-50 transition-colors"
             >
-              去培训运营继续处理
+              去社区运营继续处理
             </button>
           </div>
 
@@ -194,7 +194,7 @@ export default function InfoSyncDetail() {
                   onClick={() => navigate("/workbench/content-ops")}
                   className="w-full py-2.5 rounded-xl bg-[#2F5FD0] hover:bg-[#2550B8] text-white text-sm transition-colors"
                 >
-                  去培训运营处理版本承接
+                  去社区运营处理版本承接
                 </button>
                 <button
                   onClick={() => navigate("/workbench/blueprint")}

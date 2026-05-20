@@ -38,7 +38,7 @@ const architectureGroups = [
   {
     title: "工作人员主链路",
     tone: "bg-amber-50 border-amber-100 text-[#B45309]",
-    items: ["信息同步中心", "培训运营", "销售-设计协同", "审单·回流", "审批·申请", "带教看板"],
+    items: ["信息同步中心", "社区运营", "销售-设计协同", "审单·回流", "审批·申请", "异常看板"],
   },
 ];
 
@@ -54,7 +54,7 @@ const staffJourney = [
   { label: "登录 / 选择身份", desc: "同一账号进入工作人员视角" },
   { label: "工作人员首页 / 工作台", desc: "先看风险、待办、异常和推进动作" },
   { label: "信息同步中心", desc: "识别更新、影响范围和旧内容风险" },
-  { label: "培训运营", desc: "把课件 / 题库 / AI 陪练场景同步到同一版本" },
+  { label: "社区运营", desc: "把资源、群运营、转化和新人培养同步到同一版本" },
   { label: "销设协同 / 审单回流 / 审批带教", desc: "处理跨角色交接、回流培训与身份流转" },
 ];
 
@@ -62,7 +62,7 @@ const crossFlows = [
   {
     title: "现场救场回流",
     from: "AI 问答",
-    to: "信息同步中心 / 培训运营",
+    to: "信息同步中心 / 社区运营",
     note: "答不上来时发起知识补充，避免销售与培训口径继续分裂。",
   },
   {
@@ -74,7 +74,7 @@ const crossFlows = [
   {
     title: "异常问题回流",
     from: "审单·回流 / 售后",
-    to: "培训运营 / 信息同步中心",
+    to: "社区运营 / 信息同步中心",
     note: "把真实异常转成题库、陪练场景和规范修订，而不是只处理当单。",
   },
   {
@@ -104,7 +104,7 @@ const loopCards = [
   {
     title: "信息同步闭环",
     status: "完成",
-    note: "信息同步中心与培训运营之间显性追踪课件、题库、陪练场景是否真正同步。",
+    note: "信息同步中心与社区运营之间显性追踪资源口径、运营动作和新人培养资料是否真正同步。",
   },
   {
     title: "销设协同闭环",
@@ -127,7 +127,7 @@ const quickLinks = [
   { label: "打开学习中心", path: "/learning", icon: <BookOpen size={14} /> },
   { label: "打开 AI 问答", path: "/learning/ai-qna", icon: <Brain size={14} /> },
   { label: "打开信息同步中心", path: "/workbench/info-sync", icon: <RefreshCw size={14} /> },
-  { label: "打开培训运营", path: "/workbench/content-ops", icon: <Layers size={14} /> },
+  { label: "打开社区运营", path: "/workbench/content-ops", icon: <Layers size={14} /> },
   { label: "打开销设协同", path: "/workbench/collab", icon: <ArrowLeftRight size={14} /> },
   { label: "打开审单回流", path: "/workbench/order-review", icon: <FileCheck size={14} /> },
   { label: "打开双端映射验收", path: "/workbench/dual-end-acceptance", icon: <CheckCircle2 size={14} /> },
@@ -286,11 +286,11 @@ export default function ProductBlueprint() {
                     <div className="grid grid-cols-2 gap-2">
                       {[
                         { label: "信息同步", icon: <RefreshCw size={13} /> },
-                        { label: "培训运营", icon: <Layers size={13} /> },
+                        { label: "社区运营", icon: <Layers size={13} /> },
                         { label: "销设协同", icon: <ArrowLeftRight size={13} /> },
                         { label: "审单回流", icon: <FileCheck size={13} /> },
                         { label: "审批申请", icon: <Shield size={13} /> },
-                        { label: "带教看板", icon: <BarChart3 size={13} /> },
+                        { label: "异常看板", icon: <BarChart3 size={13} /> },
                       ].map((item) => (
                         <div key={item.label} className="rounded-xl bg-white px-3 py-2 text-xs text-gray-700 flex items-center gap-2">
                           {item.icon}

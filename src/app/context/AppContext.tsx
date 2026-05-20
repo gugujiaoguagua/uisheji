@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, ReactNode } from "react";
 
 export type Identity = "student" | "staff";
 export type LearnerRole = "sales" | "community_ops" | "ops_manager" | "designer";
+export type StaffRole = "training_teacher" | "ops" | "designer" | "sales" | "order_reviewer";
 export type StaffApprovalStatus = "not_applied" | "pending" | "approved" | "rejected";
 
 export interface ApplicationRecord {
@@ -22,6 +23,7 @@ export interface User {
   role: string;
   department: string;
   learnerRole: LearnerRole;
+  staffRole: StaffRole;
   identity: Identity;
   primaryIdentity: Identity;
   availableIdentities: Identity[];
@@ -41,6 +43,7 @@ interface AppContextType {
   logout: () => void;
   switchIdentity: (identity: Identity) => void;
   switchLearnerRole: (learnerRole: LearnerRole) => void;
+  switchStaffRole: (staffRole: StaffRole) => void;
   unreadMessages: number;
   pendingTasks: number;
 }
@@ -49,9 +52,10 @@ const defaultUser: User = {
   id: "u001",
   name: "张晓琳",
   avatar: "张",
-  role: "销售顾问",
-  department: "华南区销售部",
+  role: "培训老师",
+  department: "直营赋能组",
   learnerRole: "sales",
+  staffRole: "training_teacher",
   identity: "student",
   primaryIdentity: "staff",
   availableIdentities: ["student", "staff"],
@@ -65,10 +69,10 @@ const defaultUser: User = {
     "AI 陪练",
     "考核与成长",
     "信息同步",
-    "培训运营",
-    "销设协同",
-    "审单回流",
-    "带教看板",
+    "场景演练",
+    "补训闭环",
+    "案例库",
+    "学员画像",
   ],
   applicationRecords: [
     {
@@ -102,6 +106,7 @@ const AppContext = createContext<AppContextType>({
   logout: () => {},
   switchIdentity: () => {},
   switchLearnerRole: () => {},
+  switchStaffRole: () => {},
   unreadMessages: 0,
   pendingTasks: 0,
 });
@@ -145,6 +150,54 @@ export const learnerRoleProfiles: Record<LearnerRole, {
 
 export function getLearnerRoleMeta(learnerRole?: LearnerRole) {
   return learnerRoleProfiles[learnerRole || "sales"];
+}
+
+export const staffRoleProfiles: Record<StaffRole, {
+  label: string;
+  shortLabel: string;
+  roleTitle: string;
+  desc: string;
+  tags: string[];
+}> = {
+  training_teacher: {
+    label: "培训老师",
+    shortLabel: "培训",
+    roleTitle: "培训老师",
+    desc: "优先处理新人分层、场景演练、评分反馈、补训闭环和案例沉淀。",
+    tags: ["新人培养", "场景演练", "评分反馈", "补训闭环"],
+  },
+  ops: {
+    label: "运营",
+    shortLabel: "运营",
+    roleTitle: "运营负责人",
+    desc: "后续接入资源开拓、社群运营、转化复盘和任务闭环。",
+    tags: ["资源开拓", "社群运营", "转化复盘", "数据治理"],
+  },
+  designer: {
+    label: "设计师",
+    shortLabel: "设计",
+    roleTitle: "设计师",
+    desc: "后续接入方案讲解、图纸准备、会审反馈和设计协同。",
+    tags: ["方案讲解", "图纸准备", "会审反馈", "设计协同"],
+  },
+  sales: {
+    label: "销售",
+    shortLabel: "销售",
+    roleTitle: "销售顾问",
+    desc: "后续接入客户跟进、报价推进、成交复盘和话术训练。",
+    tags: ["客户跟进", "报价推进", "成交复盘", "话术训练"],
+  },
+  order_reviewer: {
+    label: "审单",
+    shortLabel: "审单",
+    roleTitle: "审单专员",
+    desc: "后续接入订单校验、异常标注、回流复盘和规则同步。",
+    tags: ["订单校验", "异常标注", "规则同步", "回流复盘"],
+  },
+};
+
+export function getStaffRoleMeta(staffRole?: StaffRole) {
+  return staffRoleProfiles[staffRole || "training_teacher"];
 }
 
 export function getIdentityLabel(identity: Identity) {
@@ -191,6 +244,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ...userOverrides,
       availableIdentities: userOverrides.availableIdentities ?? defaultUser.availableIdentities,
       learnerRole: userOverrides.learnerRole ?? defaultUser.learnerRole,
+      staffRole: userOverrides.staffRole ?? defaultUser.staffRole,
       permissions: userOverrides.permissions ?? defaultUser.permissions,
       applicationRecords: userOverrides.applicationRecords ?? defaultUser.applicationRecords,
     };
@@ -223,6 +277,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setUser((prev) => (prev ? { ...prev, learnerRole, role: getLearnerRoleMeta(learnerRole).roleTitle } : prev));
   };
 
+  const switchStaffRole = (staffRole: StaffRole) => {
+    setUser((prev) => (prev ? { ...prev, staffRole, role: getStaffRoleMeta(staffRole).roleTitle } : prev));
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -233,7 +291,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         logout,
         switchIdentity,
         switchLearnerRole,
-        unreadMessages: 5,
+        switchStaffRole,
+        unreadMessages: user?.identity === "staff" ? (user.staffRole === "training_teacher" ? 3 : user.staffRole === "ops" ? 4 : user.staffRole === "designer" ? 3 : 5) : 5,
         pendingTasks: 4,
       }}
     >

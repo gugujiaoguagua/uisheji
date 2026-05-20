@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8fafc"/>
+      <stop offset="1" stop-color="#edf2f7"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#334155"/>
+      <stop offset="1" stop-color="#94a3b8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="760" fill="url(#bg)"/>
+  <rect x="90" y="85" width="1020" height="590" rx="34" fill="#fff" stroke="#d9e2ec" stroke-width="3"/>
+  <rect x="165" y="160" width="430" height="420" rx="24" fill="#f1f5f9"/>
+  <rect x="210" y="205" width="340" height="110" rx="16" fill="url(#panel)"/>
+  <rect x="210" y="340" width="340" height="110" rx="16" fill="#b08968"/>
+  <rect x="210" y="475" width="340" height="62" rx="16" fill="#e5e7eb"/>
+  <circle cx="510" cy="260" r="12" fill="#e2e8f0"/>
+  <circle cx="510" cy="395" r="12" fill="#f5f5f4"/>
+  <text x="660" y="205" font-family="Arial, sans-serif" font-size="38" fill="#0f172a" font-weight="700">铝套盒 + 皮抽面</text>
+  <text x="660" y="260" font-family="Arial, sans-serif" font-size="24" fill="#475569">高端柜体组合升级</text>
+  <rect x="660" y="330" width="180" height="56" rx="14" fill="#111827"/>
+  <rect x="860" y="330" width="180" height="56" rx="14" fill="#f3f4f6"/>
+  <rect x="660" y="435" width="350" height="22" rx="11" fill="#cbd5e1"/>
+  <rect x="660" y="480" width="300" height="22" rx="11" fill="#cbd5e1"/>
+  <rect x="660" y="525" width="380" height="22" rx="11" fill="#cbd5e1"/>
+  <text x="705" y="366" font-family="Arial, sans-serif" font-size="20" fill="#fff">无缝焊接</text>
+  <text x="900" y="366" font-family="Arial, sans-serif" font-size="20" fill="#334155">讲解顺序</text>
+</svg>

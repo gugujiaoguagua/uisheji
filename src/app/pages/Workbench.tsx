@@ -2,7 +2,10 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router";
 import {
   AlertTriangle,
+  BookOpen,
+  Brain,
   Clock,
+  Dumbbell,
   RefreshCw,
   FileCheck,
   BarChart3,
@@ -16,10 +19,16 @@ import {
   Bell,
   ChevronRight,
   Briefcase,
+  Target,
+  Users,
+  Phone,
+  MessageSquare,
 } from "lucide-react";
-import { useApp, getStaffApprovalStatusMeta, getIdentityLabel } from "../context/AppContext";
+import { useApp, getStaffApprovalStatusMeta, getIdentityLabel, getStaffRoleMeta } from "../context/AppContext";
 import { IdentityStatusBar, QuickActionGrid, TodayTaskCard } from "../components/BusinessBlocks";
 import { appShellClass, getApprovalStatusToneClass, moduleIconToneClass } from "../lib/visualTokens";
+import { trainingStudents } from "../data/trainingTeacherData";
+import { orders } from "../data/orderReviewData";
 
 const urgentTasks = [
   {
@@ -85,8 +94,8 @@ const pendingTasks = [
 ];
 
 const completedTasks = [
-  { title: "推送新品参数更新通知 · 15/18 人已确认", module: "信息同步", time: "今天 10:30" },
-  { title: "2 条售后异常已回流培训系统", module: "审单回流", time: "昨天 16:20" },
+  { title: "青浦店资源缺口已补 3 个候选小区", module: "资源开拓", time: "今天 10:30" },
+  { title: "嘉定云著添加微信口径已完成一次对账", module: "数据治理", time: "昨天 16:20" },
 ];
 
 const moduleCards = [
@@ -115,41 +124,319 @@ const moduleCards = [
     badgeColor: "bg-red-100 text-[#DC2626]",
   },
   {
-    label: "信息同步中心",
-    icon: <RefreshCw size={20} />,
-    color: "bg-blue-50 text-blue-600",
-    path: "/workbench/info-sync",
-    badge: "规则口径",
+    label: "AI问答",
+    icon: <Brain size={20} />,
+    color: "bg-cyan-50 text-cyan-700",
+    path: "/learning/ai-qna",
+    badge: "问口径",
     badgeColor: "bg-[#EEF4FF] text-[#2F5FD0]",
-  },
-  {
-    label: "销设协同",
-    icon: <ArrowLeftRight size={20} />,
-    color: "bg-purple-50 text-purple-600",
-    path: "/workbench/collab",
-    badge: "1 待确认",
-    badgeColor: "bg-amber-100 text-[#F59E0B]",
-  },
-  {
-    label: "审单·回流",
-    icon: <FileCheck size={20} />,
-    color: "bg-orange-50 text-orange-600",
-    path: "/workbench/order-review",
-    badge: "1 异常",
-    badgeColor: "bg-red-100 text-[#DC2626]",
-  },
-  {
-    label: "审批·申请",
-    icon: <Shield size={20} />,
-    color: "bg-slate-50 text-slate-700",
-    path: "/workbench/approvals",
-    badge: "2 待处理",
-    badgeColor: "bg-amber-100 text-[#B45309]",
   },
 ];
 
 const showStaffCompletedPanel = false;
 const showStaffSidebar = false;
+
+const trainingTeacherQuickActions = [
+  {
+    label: "AI问答",
+    icon: <Brain size={18} />,
+    colorClassName: "bg-blue-50 text-blue-600",
+    badge: "答疑",
+    badgeClassName: "bg-blue-100 text-[#2F5FD0]",
+    path: "/learning/ai-qna",
+  },
+  {
+    label: "演练评分",
+    icon: <Dumbbell size={18} />,
+    colorClassName: "bg-indigo-50 text-indigo-600",
+    badge: "分项",
+    badgeClassName: "bg-indigo-100 text-indigo-700",
+    path: "/workbench/dashboard",
+  },
+  {
+    label: "公司产品",
+    icon: <RefreshCw size={18} />,
+    colorClassName: "bg-blue-50 text-blue-600",
+    badge: "3 更新",
+    badgeClassName: "bg-amber-100 text-[#B45309]",
+    path: "/workbench/info-sync",
+  },
+  {
+    label: "案例库",
+    icon: <BookOpen size={18} />,
+    colorClassName: "bg-green-50 text-green-600",
+    badge: "4 待入库",
+    badgeClassName: "bg-green-100 text-[#15803D]",
+    path: "/workbench/content-ops",
+  },
+];
+
+const designerQuickActions = [
+  {
+    label: "销售设计师协同",
+    icon: <ArrowLeftRight size={18} />,
+    colorClassName: "bg-green-50 text-green-600",
+    badge: "2 待补",
+    badgeClassName: "bg-red-100 text-[#DC2626]",
+    path: "/workbench/collab",
+  },
+  {
+    label: "AI问答",
+    icon: <Brain size={18} />,
+    colorClassName: "bg-blue-50 text-blue-600",
+    badge: "问口径",
+    badgeClassName: "bg-blue-100 text-[#2F5FD0]",
+    path: "/learning/ai-qna",
+  },
+  {
+    label: "公司产品",
+    icon: <RefreshCw size={18} />,
+    colorClassName: "bg-amber-50 text-amber-600",
+    badge: "3 未看",
+    badgeClassName: "bg-amber-100 text-[#B45309]",
+    path: "/workbench/info-sync",
+  },
+  {
+    label: "设计规范",
+    icon: <BookOpen size={18} />,
+    colorClassName: "bg-indigo-50 text-indigo-600",
+    badge: "防错",
+    badgeClassName: "bg-indigo-100 text-indigo-700",
+    path: "/learning/design-standards",
+  },
+];
+
+const designerUrgentTasks = [
+  {
+    id: 1,
+    title: "客户李总方案会审前缺防滑等级确认",
+    desc: "销售只写了老人安全诉求，设计侧需要补齐卫浴区 R10/R11 选择、示意图和讲解口径。",
+    urgency: "urgent" as const,
+    action: "去协同补齐",
+    path: "/workbench/collab",
+    module: "销售设计师协同",
+  },
+  {
+    id: 2,
+    title: "销售报价口径与设计方案不一致",
+    desc: "套餐内外、模块估价和方案图版本需要会审前对齐，避免客户现场听到两套说法。",
+    urgency: "urgent" as const,
+    action: "看会审记录",
+    path: "/workbench/collab/records",
+    module: "方案会审",
+  },
+];
+
+const designerPendingTasks = [
+  {
+    id: 3,
+    title: "铝套盒与皮抽面组合升级需要看完确认",
+    desc: "新品图示、适用场景和现场工艺说明会影响方案讲解，确认后再用于客户方案。",
+    urgency: "warning" as const,
+    action: "看产品",
+    path: "/workbench/info-sync",
+    module: "公司产品",
+  },
+  {
+    id: 4,
+    title: "优秀方案讲解案例待复盘",
+    desc: "把客户顾虑、图纸表达、报价边界和会审反馈沉淀成可复用讲解材料。",
+    urgency: "warning" as const,
+    action: "看协同",
+    path: "/workbench/collab",
+    module: "案例沉淀",
+  },
+];
+
+const salesQuickActions = [
+  {
+    label: "客户跟进",
+    icon: <Phone size={18} />,
+    colorClassName: "bg-green-50 text-green-600",
+    badge: "5 今日",
+    badgeClassName: "bg-red-100 text-[#DC2626]",
+    path: "/workbench/sales-followup",
+  },
+  {
+    label: "建客户单",
+    icon: <ArrowLeftRight size={18} />,
+    colorClassName: "bg-blue-50 text-blue-600",
+    badge: "交设计",
+    badgeClassName: "bg-blue-100 text-[#2F5FD0]",
+    path: "/workbench/collab",
+  },
+  {
+    label: "方案会审",
+    icon: <FileCheck size={18} />,
+    colorClassName: "bg-indigo-50 text-indigo-600",
+    badge: "同设计",
+    badgeClassName: "bg-indigo-100 text-indigo-700",
+    path: "/workbench/collab/records",
+  },
+  {
+    label: "公司产品",
+    icon: <RefreshCw size={18} />,
+    colorClassName: "bg-amber-50 text-amber-600",
+    badge: "3 更新",
+    badgeClassName: "bg-amber-100 text-[#B45309]",
+    path: "/workbench/info-sync",
+  },
+  {
+    label: "AI问答",
+    icon: <Brain size={18} />,
+    colorClassName: "bg-cyan-50 text-cyan-700",
+    badge: "问话术",
+    badgeClassName: "bg-cyan-100 text-cyan-700",
+    path: "/learning/ai-qna",
+  },
+];
+
+const salesUrgentTasks = [
+  {
+    id: 1,
+    title: "李总卫浴改造单今天要确认预算边界",
+    desc: "客户关注老人防滑和总价，先确认是否接受 R10 防滑款，再把预算上限同步给设计师。",
+    urgency: "urgent" as const,
+    action: "去跟进",
+    path: "/workbench/sales-followup",
+    module: "客户跟进",
+  },
+  {
+    id: 2,
+    title: "张女士全屋瓷砖单缺一次报价回访",
+    desc: "设计方案已同步，客户还没确认大规格哑光砖报价，需要今天补一次回访记录。",
+    urgency: "urgent" as const,
+    action: "打电话",
+    path: "/workbench/sales-followup",
+    module: "报价推进",
+  },
+];
+
+const salesPendingTasks = [
+  {
+    id: 3,
+    title: "防水产品施工规范 v3.1 需要看完",
+    desc: "新禁用材料和卫浴厚度要求会影响客户解释口径，看完再用于门店讲解。",
+    urgency: "warning" as const,
+    action: "看产品",
+    path: "/workbench/info-sync",
+    module: "公司产品",
+  },
+  {
+    id: 4,
+    title: "临港星河湾客户单待补现场照片",
+    desc: "设计师已接收需求，但还需要你上传现场照片和客户预算说明。",
+    urgency: "warning" as const,
+    action: "补客户单",
+    path: "/workbench/collab/request/r1",
+    module: "销售设计师协同",
+  },
+];
+
+const salesCustomers = [
+  { name: "李总", project: "临港星河湾 · 卫浴改造", stage: "需确认预算", next: "今天 16:00 前", tone: "red" },
+  { name: "张女士", project: "青浦悦府 · 全屋瓷砖", stage: "报价回访", next: "今天 18:00 前", tone: "amber" },
+  { name: "王先生", project: "嘉定云著 · 厨卫翻新", stage: "需求初访", next: "明天上午", tone: "blue" },
+];
+
+const orderReviewerQuickActions = [
+  {
+    label: "审单任务",
+    icon: <FileCheck size={18} />,
+    colorClassName: "bg-red-50 text-[#DC2626]",
+    badge: "异常",
+    badgeClassName: "bg-red-100 text-[#DC2626]",
+    path: "/workbench/order-review",
+  },
+  {
+    label: "下单准备",
+    icon: <CheckCircle2 size={18} />,
+    colorClassName: "bg-blue-50 text-blue-600",
+    badge: "字段",
+    badgeClassName: "bg-blue-100 text-[#2F5FD0]",
+    path: "/workbench/order-review/preparation/o1",
+  },
+  {
+    label: "工艺校验",
+    icon: <Shield size={18} />,
+    colorClassName: "bg-indigo-50 text-indigo-600",
+    badge: "三方",
+    badgeClassName: "bg-indigo-100 text-indigo-700",
+    path: "/workbench/order-review/validation/o1",
+  },
+  {
+    label: "回流培训",
+    icon: <RefreshCw size={18} />,
+    colorClassName: "bg-green-50 text-green-600",
+    badge: "防错",
+    badgeClassName: "bg-green-100 text-[#15803D]",
+    path: "/workbench/order-review/flowback/o1",
+  },
+];
+
+const orderReviewerUrgentTasks = [
+  {
+    id: 1,
+    title: "规格与设计图不一致，先冻结生产口径",
+    desc: "核对签字图纸、订单系统、生产数据三方是否一致，避免规格错误流到工厂和客户承诺。",
+    urgency: "urgent" as const,
+    action: "标注异常",
+    path: "/workbench/order-review/annotation/o1",
+    module: "尺寸/规格",
+  },
+  {
+    id: 2,
+    title: "大单/混油单签字链路缺口待确认",
+    desc: "50 万以上正常单和所有混油单必须按制度核对签字，缺签禁止下单/审单。",
+    urgency: "urgent" as const,
+    action: "查准备页",
+    path: "/workbench/order-review/preparation/o1",
+    module: "签字合规",
+  },
+];
+
+const orderReviewerPendingTasks = [
+  {
+    id: 3,
+    title: "颜色与材质备注需要复核",
+    desc: "下单颜色与签字图纸、CAD 备注、三维家翻图要一致，特别留意水晶板/双饰面同色误判。",
+    urgency: "warning" as const,
+    action: "去校验",
+    path: "/workbench/order-review/validation/o1",
+    module: "颜色/材质",
+  },
+  {
+    id: 4,
+    title: "加急单责任判定需要留痕",
+    desc: "制度要求审单部门判定是否个人原因导致加急，并同步对应责任人和扣款备注。",
+    urgency: "warning" as const,
+    action: "看归因",
+    path: "/workbench/order-review/attribution/o1",
+    module: "加急判定",
+  },
+  {
+    id: 5,
+    title: "高频错误需要回流新人防错训练",
+    desc: "把尺寸、颜色、结构格局、165 度铰链等高频漏项同步到课程、题库和陪练。",
+    urgency: "warning" as const,
+    action: "做回流",
+    path: "/workbench/order-review/flowback/o1",
+    module: "培训回流",
+  },
+];
+
+const orderReviewerRiskChecks = [
+  { label: "尺寸", value: "底单=下单", detail: "先 CAD 排版再三维家翻图" },
+  { label: "颜色", value: "图纸=系统", detail: "水晶板/双饰面需二次确认" },
+  { label: "结构", value: "交叉/内缩", detail: "板件格局不能靠想当然" },
+  { label: "合规", value: "签字/审批", detail: "大单混油、加急、成品家具要留痕" },
+];
+
+function trainingStatusTone(status: string) {
+  if (status === "红色") return "bg-red-50 text-[#DC2626]";
+  if (status === "需跟进") return "bg-amber-50 text-[#B45309]";
+  return "bg-green-50 text-[#15803D]";
+}
 
 export default function Workbench() {
 
@@ -158,10 +445,14 @@ export default function Workbench() {
   const { currentIdentity, user } = useApp();
   const isStaff = currentIdentity === "staff";
   const approvalMeta = user ? getStaffApprovalStatusMeta(user.staffApprovalStatus) : null;
-  const urgentCount = urgentTasks.length;
-  const pendingCount = pendingTasks.length;
-  const completedCount = completedTasks.length;
-  const totalOpenTasks = urgentCount + pendingCount;
+  const selectedStaffRole = user?.staffRole ?? "training_teacher";
+  const staffRoleMeta = getStaffRoleMeta(selectedStaffRole);
+  const isTrainingTeacher = isStaff && selectedStaffRole === "training_teacher";
+  const isDesigner = isStaff && selectedStaffRole === "designer";
+  const isSales = isStaff && selectedStaffRole === "sales";
+  const isOrderReviewer = isStaff && selectedStaffRole === "order_reviewer";
+  const abnormalOrderCount = orders.filter((order) => order.status === "abnormal").length;
+  const flowbackOrderCount = orders.filter((order) => order.canFlowback).length;
 
   const studentQuickCards = useMemo(
     () => [
@@ -403,6 +694,424 @@ export default function Workbench() {
     );
   }
 
+  if (isTrainingTeacher) {
+    return (
+      <div className="min-h-full bg-page-surface">
+        <div className={`${appShellClass.staffHeader} px-4 md:px-6 pt-4 pb-10`}>
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h1 className="text-white">培训老师工作台</h1>
+                <p className="text-white/60 text-xs mt-0.5">
+                  {staffRoleMeta.label}视角 · 先看学员看板、AI问答、演练评分和案例沉淀
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-6xl mx-auto px-4 md:px-6 -mt-5">
+          <div className="space-y-4">
+              <div className="bg-white rounded-xl p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                  <div className="flex items-center gap-2">
+                    <BookOpen size={15} className="text-[#2F5FD0]" />
+                    <span className="text-sm font-medium text-gray-900">培训工作入口</span>
+                  </div>
+                  <span className="text-xs text-gray-400">先答疑，再看学员真实考核</span>
+                </div>
+                <QuickActionGrid
+                  columns={4}
+                  items={trainingTeacherQuickActions.map((item) => ({
+                    label: item.label,
+                    icon: item.icon,
+                    colorClassName: item.colorClassName,
+                    badge: item.badge,
+                    badgeClassName: item.badgeClassName,
+                    onClick: () => navigate(item.path),
+                  }))}
+                />
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Users size={15} className="text-[#2F5FD0]" />
+                    <span className="text-sm font-medium text-gray-900">学员看板</span>
+                  </div>
+                  <button
+                    onClick={() => navigate("/workbench/dashboard")}
+                    className="text-xs text-[#2F5FD0] hover:text-[#2550B8] flex items-center gap-0.5"
+                  >
+                    查看分项评分 <ChevronRight size={12} />
+                  </button>
+                </div>
+                <div className="grid lg:grid-cols-2 gap-3 p-4">
+                  {trainingStudents.map((student) => {
+                    const weakestItem = student.assessmentItems.reduce((min, item) => (item.score < min.score ? item : min), student.assessmentItems[0]);
+                    return (
+                      <button
+                        key={student.id}
+                        onClick={() => navigate("/workbench/dashboard")}
+                        className="rounded-xl border border-gray-200 bg-[#FAFBFC] p-4 text-left hover:border-[#D9E5FF] hover:bg-[#F7FAFF] transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-medium text-gray-900">{student.name}</span>
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${trainingStatusTone(student.status)}`}>{student.status}</span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">{student.cohort} · {student.stage}</p>
+                          </div>
+                          <div className={student.score < 65 ? "text-2xl font-bold text-[#DC2626]" : "text-2xl font-bold text-[#2F5FD0]"}>
+                            {student.score}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 mt-3">
+                          {student.assessmentItems.map((item) => (
+                            <div key={item.label} className="rounded-lg bg-white border border-gray-100 px-2.5 py-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs text-gray-500">{item.label}</span>
+                                <span className={item.score < 60 ? "text-xs font-bold text-[#DC2626]" : item.score < 75 ? "text-xs font-bold text-[#F59E0B]" : "text-xs font-bold text-[#16A34A]"}>
+                                  {item.score}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-3 line-clamp-1">最低项：{weakestItem.label} · {weakestItem.evidence}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isDesigner) {
+    return (
+      <div className="min-h-full bg-page-surface">
+        <div className={`${appShellClass.staffHeader} px-4 md:px-6 pt-4 pb-10`}>
+          <div className="max-w-5xl mx-auto">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h1 className="text-white">设计师工作台</h1>
+                <p className="text-white/60 text-xs mt-0.5">
+                  {staffRoleMeta.label}视角 · 先看方案协同、图纸准备、会审反馈和产品口径
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-5xl mx-auto px-4 md:px-6 -mt-5">
+          <div className="space-y-4">
+            <div className="bg-white rounded-xl p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                <div className="flex items-center gap-2">
+                  <FileCheck size={15} className="text-[#2F5FD0]" />
+                  <span className="text-sm font-medium text-gray-900">设计工作入口</span>
+                </div>
+                <span className="text-xs text-gray-400">先对齐口径，再进入会审</span>
+              </div>
+              <QuickActionGrid
+                columns={4}
+                items={designerQuickActions.map((item) => ({
+                  label: item.label,
+                  icon: item.icon,
+                  colorClassName: item.colorClassName,
+                  badge: item.badge,
+                  badgeClassName: item.badgeClassName,
+                  onClick: () => navigate(item.path),
+                }))}
+              />
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+                <AlertTriangle size={15} className="text-[#DC2626]" />
+                <span className="text-sm font-medium text-gray-900">紧急 · 会审前必须补齐</span>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {designerUrgentTasks.map((task) => (
+                  <TodayTaskCard
+                    key={task.id}
+                    title={task.title}
+                    description={task.desc}
+                    urgency={task.urgency}
+                    moduleLabel={task.module}
+                    actionLabel={task.action}
+                    onClick={() => navigate(task.path)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+                <Clock size={15} className="text-[#F59E0B]" />
+                <span className="text-sm font-medium text-gray-900">待处理 · 产品与案例沉淀</span>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {designerPendingTasks.map((task) => (
+                  <TodayTaskCard
+                    key={task.id}
+                    title={task.title}
+                    description={task.desc}
+                    urgency={task.urgency}
+                    moduleLabel={task.module}
+                    actionLabel={task.action}
+                    onClick={() => navigate(task.path)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isSales) {
+    return (
+      <div className="min-h-full bg-page-surface">
+        <div className={`${appShellClass.staffHeader} px-4 md:px-6 pt-4 pb-10`}>
+          <div className="max-w-5xl mx-auto">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h1 className="text-white">销售工作台</h1>
+                <p className="text-white/60 text-xs mt-0.5">
+                  {staffRoleMeta.label}视角 · 先看客户跟进、报价推进、产品口径和设计协同
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-5xl mx-auto px-4 md:px-6 -mt-5">
+          <div className="space-y-4">
+            <div className="bg-white rounded-xl p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                <div className="flex items-center gap-2">
+                  <Briefcase size={15} className="text-[#2F5FD0]" />
+                  <span className="text-sm font-medium text-gray-900">销售工作入口</span>
+                </div>
+                <span className="text-xs text-gray-400">先跟进客户，再同步设计</span>
+              </div>
+              <QuickActionGrid
+                columns={5}
+                items={salesQuickActions.map((item) => ({
+                  label: item.label,
+                  icon: item.icon,
+                  colorClassName: item.colorClassName,
+                  badge: item.badge,
+                  badgeClassName: item.badgeClassName,
+                  onClick: () => navigate(item.path),
+                }))}
+              />
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2 bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+                  <Flame size={15} className="text-[#DC2626]" />
+                  <span className="text-sm font-medium text-gray-900">今日必须推进</span>
+                </div>
+                <div className="divide-y divide-gray-50">
+                  {salesUrgentTasks.map((task) => (
+                    <TodayTaskCard
+                      key={task.id}
+                      title={task.title}
+                      description={task.desc}
+                      urgency={task.urgency}
+                      moduleLabel={task.module}
+                      actionLabel={task.action}
+                      onClick={() => navigate(task.path)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Users size={15} className="text-[#2F5FD0]" />
+                  <span className="text-sm font-medium text-gray-900">重点客户</span>
+                </div>
+                <div className="space-y-2">
+                  {salesCustomers.map((customer) => (
+                    <button
+                      key={customer.name}
+                      type="button"
+                      onClick={() => navigate("/workbench/sales-followup")}
+                      className="w-full rounded-xl border border-gray-200 bg-[#FAFBFC] px-3 py-3 text-left hover:border-[#D9E5FF] hover:bg-[#F7FAFF] transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-gray-900">{customer.name}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          customer.tone === "red" ? "bg-red-50 text-[#DC2626]" : customer.tone === "amber" ? "bg-amber-50 text-[#B45309]" : "bg-blue-50 text-[#2F5FD0]"
+                        }`}>
+                          {customer.stage}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">{customer.project}</p>
+                      <p className="text-xs text-gray-400 mt-1">下次动作：{customer.next}</p>
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <span className="inline-flex items-center justify-center gap-1 rounded-lg bg-[#2F5FD0] text-white py-1.5 text-xs">
+                          <MessageSquare size={12} /> 发消息
+                        </span>
+                        <span className="inline-flex items-center justify-center gap-1 rounded-lg bg-[#16A34A] text-white py-1.5 text-xs">
+                          <Phone size={12} /> 打电话
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+                <Clock size={15} className="text-[#F59E0B]" />
+                <span className="text-sm font-medium text-gray-900">待处理 · 产品与协同</span>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {salesPendingTasks.map((task) => (
+                  <TodayTaskCard
+                    key={task.id}
+                    title={task.title}
+                    description={task.desc}
+                    urgency={task.urgency}
+                    moduleLabel={task.module}
+                    actionLabel={task.action}
+                    onClick={() => navigate(task.path)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isOrderReviewer) {
+    return (
+      <div className="min-h-full bg-page-surface">
+        <div className={`${appShellClass.staffHeader} px-4 md:px-6 pt-4 pb-10`}>
+          <div className="max-w-6xl mx-auto">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h1 className="text-white">审单工作台</h1>
+                <p className="text-white/60 text-xs mt-0.5">
+                  {staffRoleMeta.label}视角 · 先拦截尺寸、颜色、结构、签字和加急风险
+                </p>
+              </div>
+              <div className="hidden sm:grid grid-cols-3 gap-2 text-right">
+                {[
+                  { label: "异常单", value: `${abnormalOrderCount}` },
+                  { label: "可回流", value: `${flowbackOrderCount}` },
+                  { label: "红线项", value: "4" },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-lg bg-white/10 px-3 py-2">
+                    <div className="text-xl font-bold text-white">{item.value}</div>
+                    <div className="text-white/50 text-xs">{item.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-6xl mx-auto px-4 md:px-6 -mt-5">
+          <div className="space-y-4">
+            <div className="bg-white rounded-xl p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                <div className="flex items-center gap-2">
+                  <FileCheck size={15} className="text-[#2F5FD0]" />
+                  <span className="text-sm font-medium text-gray-900">审单工作入口</span>
+                </div>
+                <span className="text-xs text-gray-400">先拦截风险，再回流标准</span>
+              </div>
+              <QuickActionGrid
+                columns={4}
+                items={orderReviewerQuickActions.map((item) => ({
+                  label: item.label,
+                  icon: item.icon,
+                  colorClassName: item.colorClassName,
+                  badge: item.badge,
+                  badgeClassName: item.badgeClassName,
+                  onClick: () => navigate(item.path),
+                }))}
+              />
+            </div>
+
+            <div className="grid lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2 bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+                  <Flame size={15} className="text-[#DC2626]" />
+                  <span className="text-sm font-medium text-gray-900">紧急 · 今日先拦截</span>
+                </div>
+                <div className="divide-y divide-gray-50">
+                  {orderReviewerUrgentTasks.map((task) => (
+                    <TodayTaskCard
+                      key={task.id}
+                      title={task.title}
+                      description={task.desc}
+                      urgency={task.urgency}
+                      moduleLabel={task.module}
+                      actionLabel={task.action}
+                      onClick={() => navigate(task.path)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Shield size={15} className="text-[#2F5FD0]" />
+                  <span className="text-sm font-medium text-gray-900">审单红线核查</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {orderReviewerRiskChecks.map((item) => (
+                    <div key={item.label} className="rounded-xl border border-gray-200 bg-[#FAFBFC] px-3 py-3">
+                      <p className="text-xs text-gray-400">{item.label}</p>
+                      <p className="text-sm font-medium text-gray-900 mt-1">{item.value}</p>
+                      <p className="text-xs text-gray-500 mt-1 leading-relaxed">{item.detail}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+                <Clock size={15} className="text-[#F59E0B]" />
+                <span className="text-sm font-medium text-gray-900">待处理 · 规则与回流</span>
+              </div>
+              <div className="divide-y divide-gray-50">
+                {orderReviewerPendingTasks.map((task) => (
+                  <TodayTaskCard
+                    key={task.id}
+                    title={task.title}
+                    description={task.desc}
+                    urgency={task.urgency}
+                    moduleLabel={task.module}
+                    actionLabel={task.action}
+                    onClick={() => navigate(task.path)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
       <div className="min-h-full bg-page-surface">
       <div className={`${appShellClass.staffHeader} px-4 md:px-6 pt-4 pb-10`}>
@@ -410,26 +1119,9 @@ export default function Workbench() {
         <div className="max-w-5xl mx-auto">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-white">工作台</h1>
-              <p className="text-white/60 text-xs mt-0.5">工作人员视角 · 优先展示风险、任务、状态与下一步动作</p>
+              <h1 className="text-white">运营工作台</h1>
+              <p className="text-white/60 text-xs mt-0.5">{staffRoleMeta.label}视角 · 先看资源缺口、社群过程、转化风险和数据口径</p>
             </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-white">{totalOpenTasks}</div>
-              <div className="text-white/50 text-xs">今日待办</div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 mt-4">
-            {[
-              { label: "紧急", value: `${urgentCount}`, color: "text-red-300", bg: "bg-red-500/20 border border-red-400/30" },
-              { label: "待处理", value: `${pendingCount}`, color: "text-amber-300", bg: "bg-amber-500/20 border border-amber-400/30" },
-              { label: "今日完成", value: `${completedCount}`, color: "text-green-300", bg: "bg-green-500/20 border border-green-400/30" },
-            ].map((s) => (
-              <div key={s.label} className={`rounded-lg px-3 py-2 ${s.bg}`}>
-                <div className={`text-xl font-bold ${s.color}`}>{s.value}</div>
-                <div className="text-white/50 text-xs">{s.label}</div>
-              </div>
-            ))}
           </div>
         </div>
       </div>
@@ -439,15 +1131,22 @@ export default function Workbench() {
           <div className={`${showStaffSidebar ? "md:col-span-2" : ""} space-y-4`}>
 
             <div className="bg-white rounded-xl p-4 shadow-sm">
-              <div className="grid grid-cols-3 gap-2">
+              <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                <div className="flex items-center gap-2">
+                  <Layers size={15} className="text-[#2F5FD0]" />
+                  <span className="text-sm font-medium text-gray-900">常用工作入口</span>
+                </div>
+                <span className="text-xs text-gray-400">按今日风险优先级排序</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {moduleCards.map((m) => (
                   <button
                     key={m.label}
                     onClick={() => navigate(m.path)}
-                    className="flex flex-col items-center gap-1.5 py-3 rounded-lg hover:bg-gray-50 transition-colors relative"
+                    className="min-h-[104px] flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-lg border border-gray-100 hover:border-[#D9E5FF] hover:bg-[#F7FAFF] transition-colors relative"
                   >
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${m.color}`}>{m.icon}</div>
-                    <span className="text-xs text-gray-700 text-center">{m.label}</span>
+                    <span className="text-xs text-gray-700 text-center leading-snug">{m.label}</span>
                     {m.badge && <span className={`text-xs px-1.5 py-0.5 rounded-full ${m.badgeColor}`}>{m.badge}</span>}
                   </button>
                 ))}
@@ -524,9 +1223,9 @@ export default function Workbench() {
                   {[
                     { label: "信息同步", status: "2 待确认", color: "text-[#DC2626]", bg: "bg-red-50" },
                     { label: "社区运营", status: "高风险 12", color: "text-[#F59E0B]", bg: "bg-amber-50" },
-                    { label: "审单回流", status: "1 异常订单", color: "text-[#DC2626]", bg: "bg-red-50" },
-                    { label: "销设协同", status: "1 待确认", color: "text-[#F59E0B]", bg: "bg-amber-50" },
-                    { label: "审批申请", status: "2 待初审", color: "text-[#B45309]", bg: "bg-amber-50" },
+                    { label: "资源开拓", status: "5 个缺口", color: "text-[#DC2626]", bg: "bg-red-50" },
+                    { label: "数据治理", status: "2 条对账", color: "text-[#B45309]", bg: "bg-amber-50" },
+                    { label: "新人培养", status: "3 个阶段", color: "text-[#2F5FD0]", bg: "bg-[#EEF4FF]" },
                     { label: "异常看板", status: "12 风险小区", color: "text-[#DC2626]", bg: "bg-red-50" },
                   ].map((item) => (
                     <div key={item.label} className="flex items-center justify-between">
@@ -544,10 +1243,10 @@ export default function Workbench() {
                 </div>
                 <div className="space-y-2">
                   {[
-                    { label: "查看产品蓝图", desc: "统一架构图 + 页面关系图", path: "/workbench/blueprint" },
-                    { label: "查看双端映射验收", desc: "桌面端 / 手机端映射与差异边界", path: "/workbench/dual-end-acceptance" },
-                    { label: "查看信息同步链路", desc: "更新详情 / 影响范围 / 下游同步", path: "/workbench/info-sync" },
-                    { label: "查看审单回流拆解", desc: "异常详情 / 责任归因 / 回流计划", path: "/workbench/order-review" },
+                    { label: "资源开拓看板", desc: "小区资源 / 门店缺口 / 负责人", path: "/workbench/content-ops" },
+                    { label: "异常风险名单", desc: "人员 / 小区 / 门店红黄预警", path: "/workbench/dashboard/risk" },
+                    { label: "运营任务闭环", desc: "负责人 / 截止时间 / 处理回执", path: "/workbench/dashboard/tasks" },
+                    { label: "数据口径治理", desc: "群人数 / 添加微信 / QC 对账", path: "/workbench/content-ops" },
                   ].map((item) => (
                     <button
                       key={item.label}
@@ -565,10 +1264,10 @@ export default function Workbench() {
                 <p className="text-sm font-medium text-gray-900 mb-3">近期操作记录</p>
                 <div className="space-y-3">
                   {[
-                    { action: "推送了防水规范更新通知", time: "10:30" },
-                    { action: "审核并回流了 2 条售后异常", time: "昨天" },
-                    { action: "新增了 1 个陪练话术场景", time: "昨天" },
-                    { action: "集中处理 2 条审批与申请提醒", time: "今天" },
+                    { action: "补齐青浦店 3 个小区资源入口", time: "10:30" },
+                    { action: "回写临港星河湾群人数拉新动作", time: "昨天" },
+                    { action: "对齐嘉定云著添加微信统计口径", time: "昨天" },
+                    { action: "拆出 2 条样板间推进任务", time: "今天" },
                   ].map((log) => (
                     <div key={`${log.action}-${log.time}`} className="flex items-start gap-2">
                       <div className="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0 mt-1.5" />
