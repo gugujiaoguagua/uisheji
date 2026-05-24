@@ -37,6 +37,12 @@ import { IdentityStatusBar, QuickActionGrid, TodayTaskCard } from "../components
 import { GlobalStateCard, type GlobalStateTone } from "../components/GlobalStateCard";
 import { appShellClass, getApprovalStatusToneClass, moduleIconToneClass } from "../lib/visualTokens";
 import { trainingStudents } from "../data/trainingTeacherData";
+import {
+  generatedLearningKnowledgeMeta,
+  getLearningKnowledgeEntries,
+  getRoleCompetencyTags,
+} from "../data/learningKnowledgeMap";
+import type { LearnerRole } from "../context/AppContext";
 
 type StudentHomeState =
   | "normal"
@@ -902,6 +908,135 @@ const studentHomeStates: Record<StudentHomeState, StudentStateConfig> = {
 
 };
 
+function createOnboardingAssessmentHomeTask(learnerRole: LearnerRole): StudentTask {
+  const roleKnowledgeCount = generatedLearningKnowledgeMeta.summaryByRole[learnerRole] ?? 0;
+  const competencyNames = getRoleCompetencyTags(learnerRole).slice(0, 3).map((item) => item.tag);
+
+  return {
+    id: 0,
+    type: "exam",
+    title: "新人入门能力摸底考核",
+    desc: `已接入 ${roleKnowledgeCount} 条会议提取文本，重点检查：${competencyNames.join("、") || "岗位基础能力"}。`,
+    urgency: "urgent",
+    deadline: "今日必做",
+    duration: "约 15 分钟",
+    progress: 0,
+    path: "/learning/assessment",
+    ctaLabel: "开始考核",
+  };
+}
+
+function knowledgeUrgency(priority: "high" | "medium" | "low"): StudentTask["urgency"] {
+  if (priority === "high") return "urgent";
+  if (priority === "medium") return "warning";
+  return "normal";
+}
+
+function estimateKnowledgeDuration(charCount: number) {
+  return Math.min(35, Math.max(12, Math.round(charCount / 520)));
+}
+
+function getDistinctKnowledgeSeeds(learnerRole: LearnerRole) {
+  const picked = new Map<string, ReturnType<typeof getLearningKnowledgeEntries>[number]>();
+
+  for (const use of ["course", "practice", "assessment"] as const) {
+    const seed = getLearningKnowledgeEntries({ role: learnerRole, use, limit: 8 }).find((entry) => !picked.has(entry.id));
+    if (seed) picked.set(seed.id, seed);
+  }
+
+  return Array.from(picked.values());
+}
+
+function createDynamicKnowledgeTasks(learnerRole: LearnerRole): StudentTask[] {
+  const [courseSeed, practiceSeed, assessmentSeed] = getDistinctKnowledgeSeeds(learnerRole);
+
+  return [
+    courseSeed && {
+      id: 101,
+      type: "course" as const,
+      title: `知识库课程：${courseSeed.competencyTags[0] || courseSeed.title}`,
+      desc: `来源《${courseSeed.sourceFile}》 · ${courseSeed.generatedTask.courseTitle}`,
+      urgency: knowledgeUrgency(courseSeed.priority),
+      deadline: courseSeed.priority === "high" ? "今日优先" : "本周内",
+      duration: `约 ${estimateKnowledgeDuration(courseSeed.charCount)} 分钟`,
+      progress: 0,
+      path: "/learning",
+      ctaLabel: "去学习",
+    },
+    practiceSeed && {
+      id: 102,
+      type: "practice" as const,
+      title: `AI 陪练：${practiceSeed.competencyTags[0] || "知识库场景"}表达`,
+      desc: `由《${practiceSeed.sourceFile}》生成 · ${practiceSeed.generatedTask.practicePrompt}`,
+      urgency: knowledgeUrgency(practiceSeed.priority),
+      deadline: "本周内",
+      duration: "约 15 分钟",
+      progress: 0,
+      path: "/learning/ai-practice",
+      ctaLabel: "开始陪练",
+    },
+    assessmentSeed && {
+      id: 103,
+      type: "exam" as const,
+      title: `${assessmentSeed.competencyTags[0] || "岗位"}能力验证`,
+      desc: `由《${assessmentSeed.sourceFile}》生成 · ${assessmentSeed.generatedTask.assessmentFocus}`,
+      urgency: knowledgeUrgency(assessmentSeed.priority),
+      deadline: "完成学习后",
+      duration: "约 12 分钟",
+      progress: 0,
+      path: "/learning/assessment",
+      ctaLabel: "去验证",
+    },
+  ].filter(Boolean) as StudentTask[];
+}
+
+function createDynamicStudentUpdates(learnerRole: LearnerRole): UpdateItem[] {
+  return getLearningKnowledgeEntries({ role: learnerRole, limit: 3 }).map((entry) => ({
+    title: `已从《${entry.sourceFile}》生成${entry.competencyTags[0] || "岗位"}学习任务`,
+    time: "动态生成",
+    type: "system" as const,
+  }));
+}
+
+function withDynamicKnowledgeTasks(state: StudentStateConfig, learnerRole: LearnerRole): StudentStateConfig {
+  const onboardingAssessmentHomeTask = createOnboardingAssessmentHomeTask(learnerRole);
+  const dynamicTasks = createDynamicKnowledgeTasks(learnerRole);
+  const tasks = [onboardingAssessmentHomeTask, ...dynamicTasks];
+  const pendingTaskCount = tasks.filter((task) => task.progress < 100).length;
+  const practiceTaskCount = Math.max(1, tasks.filter((task) => task.type === "practice").length);
+  const completedPracticeCount = tasks.filter((task) => task.type === "practice" && task.progress >= 100).length;
+  const competencyNames = getRoleCompetencyTags(learnerRole).slice(0, 3).map((item) => item.tag);
+  const updates = createDynamicStudentUpdates(learnerRole);
+
+  return {
+    ...state,
+    label: "知识库动态生成",
+    heroTitle: "先完成知识库生成的入门任务",
+    heroDesc: `今日任务按当前学习身份和会议提取文本动态生成，优先检查${competencyNames.join("、") || "岗位基础能力"}。`,
+    stats: [
+      { label: "今日任务", value: String(pendingTaskCount), sub: "项待完成" },
+      { label: "本周训练", value: `${completedPracticeCount}/${practiceTaskCount}`, sub: "次陪练" },
+      { label: "综合评分", value: "未测", sub: "待考核" },
+    ],
+    focusCard: {
+      tone: "bg-[#F7FAFF] border-[#D9E5FF]",
+      title: "当前状态提醒：知识库动态任务",
+      desc: `已按 ${generatedLearningKnowledgeMeta.summaryByRole[learnerRole] ?? 0} 条会议提取文本生成任务，不再使用演示课程和假分数。`,
+      actionLabel: "去学习中心",
+      actionPath: "/learning",
+    },
+    tasks,
+    updates: updates.length ? updates : state.updates,
+    growthCard: {
+      tone: "bg-[#F5F7FA]",
+      title: "成长提醒：先完成入门验证",
+      desc: "新员工完成考核、陪练和课程后，后续再根据真实结果生成补训与成长反馈。",
+      actionLabel: "查看成长总览",
+      actionPath: "/learning/growth",
+    },
+  };
+}
+
 const learnerRoleHomeStates = {
   sales: studentHomeStates.normal,
   community_ops: {
@@ -1026,9 +1161,13 @@ export default function Home() {
   const isOrderReviewerStaff = isStaff && selectedStaffRole === "order_reviewer";
   const today = new Date().toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "long" });
   const approvalMeta = user ? getStaffApprovalStatusMeta(user.staffApprovalStatus) : null;
-  const currentStudentState = useMemo(
+  const rawStudentState = useMemo(
     () => (studentHomeState === "normal" ? learnerRoleHomeStates[selectedLearnerRole] : studentHomeStates[studentHomeState]),
     [selectedLearnerRole, studentHomeState]
+  );
+  const currentStudentState = useMemo(
+    () => (studentHomeState === "normal" ? withDynamicKnowledgeTasks(rawStudentState, selectedLearnerRole) : rawStudentState),
+    [rawStudentState, selectedLearnerRole, studentHomeState]
   );
   const showStaffActionBoard = false;
   const showStaffUpdatesPanel = false;

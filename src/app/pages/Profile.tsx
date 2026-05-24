@@ -27,6 +27,7 @@ import {
   useApp,
 } from "../context/AppContext";
 import { ApprovalStatusCard, IdentityStatusBar, ReminderStrip } from "../components/BusinessBlocks";
+import { getDynamicProfileStats } from "../data/dynamicLearningProfile";
 
 const certifications = [
   { name: "产品基础知识认证", date: "2023-12-28", score: 88, valid: true },
@@ -83,7 +84,7 @@ export default function Profile() {
   const latestApplication = user.applicationRecords[0];
   const canSwitchStaff = user.availableIdentities.includes("staff");
 
-  const stats = [
+  const stats = isStudent ? getDynamicProfileStats(user.learnerRole, user.points) : [
     { label: "综合评分", value: "78", unit: "分" },
     { label: "已完成课程", value: "12", unit: "门" },
     { label: "AI 陪练", value: "7", unit: "次" },
@@ -261,7 +262,7 @@ export default function Profile() {
           </div>
 
           {isStudent && (
-            <div className="grid grid-cols-4 gap-2 mt-4">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-4">
               {stats.map((stat) => (
                 <div key={stat.label} className="bg-white/10 rounded-xl px-2 py-2 text-center">
                   <div className="text-lg font-bold text-white">

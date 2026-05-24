@@ -14,6 +14,11 @@ import {
 } from "lucide-react";
 import type { LearnerRole } from "../context/AppContext";
 import { getLearnerRoleMeta, useApp } from "../context/AppContext";
+import {
+  generatedLearningKnowledgeMeta,
+  getOnboardingKnowledgeSeeds,
+  getRoleCompetencyTags,
+} from "../data/learningKnowledgeMap";
 
 type Stage = "list" | "instructions" | "answering" | "result";
 
@@ -28,7 +33,21 @@ type Question = {
 
 type AnswerValue = number | number[] | null;
 
+const allLearnerRoles: LearnerRole[] = ["sales", "community_ops", "ops_manager", "designer"];
+
 const exams = [
+  {
+    id: "onboarding",
+    title: "新人入门能力摸底考核",
+    learnerRoles: allLearnerRoles,
+    questionCount: 5,
+    duration: 15,
+    deadline: "入职必做",
+    urgency: "warning",
+    status: "not_started",
+    passingScore: 85,
+    desc: "不同学习身份使用同一个入门考核入口，题目会按当前身份检查是否具备对应岗位的基础胜任力",
+  },
   {
     id: "1",
     title: "板材基础与客户三连问小测",
@@ -344,7 +363,208 @@ const questionBank: Record<string, Question[]> = {
   ],
 };
 
+const onboardingQuestionBank: Record<LearnerRole, Question[]> = {
+  sales: [
+    {
+      id: 1,
+      type: "single",
+      question: "新人销售顾问接到客户第一句“你们板材为什么贵”时，最能体现基础能力的处理是？",
+      options: ["先给最低价", "先判断客户关心价格、环保还是耐用，再结合空间场景解释", "直接说品牌更好", "让客户先看宣传册"],
+      correct: 1,
+      explanation: "入门销售能力首先看能否识别客户真实顾虑，并把产品知识转成客户能理解的使用价值。",
+    },
+    {
+      id: 2,
+      type: "multiple",
+      question: "销售新人做需求确认时，至少要问清哪些信息？（多选）",
+      options: ["户型和重点空间", "预算区间", "客户不能接受的红线", "只问什么时候付款"],
+      correct: [0, 1, 2],
+      explanation: "能否围绕户型、空间、预算和红线建立需求底座，是判断新人能否进入真实销售动作的关键。",
+    },
+    {
+      id: 3,
+      type: "single",
+      question: "客户临时要求改尺寸和颜色，销售新人最应该先做什么？",
+      options: ["口头答应客户", "判断是否触发非标并提醒版本确认", "让工厂先做", "忽略小改动"],
+      correct: 1,
+      explanation: "下单前变更必须先识别风险，不能靠口头承诺推进。",
+    },
+    {
+      id: 4,
+      type: "single",
+      question: "客户在群里情绪升级时，销售新人第一句话应该优先做到什么？",
+      options: ["解释流程", "承接问题和情绪，并给出处理动作与反馈时间", "说明不是自己的责任", "让客户冷静"],
+      correct: 1,
+      explanation: "客诉处理的基础能力是先承接，再给动作和时间点，避免空解释和推责。",
+    },
+    {
+      id: 5,
+      type: "multiple",
+      question: "判断销售新人是否能上岗，以下哪些表现可以作为通过依据？（多选）",
+      options: ["能把产品差异讲成客户体验", "能识别非标和留痕风险", "能把沟通推进到量尺、到店或确认版本", "只会背产品名词"],
+      correct: [0, 1, 2],
+      explanation: "入门考核不是考背诵，而是看能否把知识、风险和推进动作串起来。",
+    },
+  ],
+  community_ops: [
+    {
+      id: 1,
+      type: "single",
+      question: "社区运营新人看到小区群人数长期不达标，最合适的第一步是？",
+      options: ["直接要求销售多拉人", "拆解资源、触达、内容节奏和执行责任", "降低目标", "停止运营该小区"],
+      correct: 1,
+      explanation: "社区运营新人必须先会拆问题，而不是直接把责任推给单一角色。",
+    },
+    {
+      id: 2,
+      type: "multiple",
+      question: "社区运营基础动作需要能追踪哪些闭环要素？（多选）",
+      options: ["责任人", "截止时间", "回执口径", "指标缺口"],
+      correct: [0, 1, 2, 3],
+      explanation: "可追踪、可回执、可复盘，是判断社区运营新人是否能落地执行的基础。",
+    },
+    {
+      id: 3,
+      type: "single",
+      question: "门店反馈没有新资源时，社区运营新人不应直接做的是？",
+      options: ["盘点现有资源池", "确认缺口和目标小区优先级", "只发一句继续跟进", "拆成门店和人员动作"],
+      correct: 2,
+      explanation: "“继续跟进”不是动作，入门能力要能把资源问题拆成具体任务。",
+    },
+    {
+      id: 4,
+      type: "single",
+      question: "社区运营发现新品信息、培训课件和 AI 陪练口径不一致时，应优先判断为什么问题？",
+      options: ["个人记忆问题", "跨角色信息同步风险", "客户没有需求", "页面样式问题"],
+      correct: 1,
+      explanation: "社区运营要能识别信息差，并推动信息同步到课件、题库、陪练和业务端。",
+    },
+    {
+      id: 5,
+      type: "multiple",
+      question: "以下哪些能证明社区运营新人具备入门能力？（多选）",
+      options: ["能拆解指标异常", "能派发责任人和截止时间", "能记录回执和复盘节点", "只看最终签单数"],
+      correct: [0, 1, 2],
+      explanation: "社区运营入门能力重点看过程管理和闭环推进，不是只看结果。",
+    },
+  ],
+  ops_manager: [
+    {
+      id: 1,
+      type: "single",
+      question: "运营管理新人看到微信添加偏低，最不应该直接判断的是？",
+      options: ["触达资源可能不足", "邀约话术可能有问题", "人员执行可能偏弱", "客户一定没有需求"],
+      correct: 3,
+      explanation: "运营管理要先拆资源、触达、执行和话术，不能直接用单一结论替代分析。",
+    },
+    {
+      id: 2,
+      type: "multiple",
+      question: "运营管理新人做异常判断时，应同时看哪些过程指标？（多选）",
+      options: ["群人数", "微信添加", "QC", "样板间和签单目标"],
+      correct: [0, 1, 2, 3],
+      explanation: "过程指标链路完整，才能判断异常来自资源、执行还是转化。",
+    },
+    {
+      id: 3,
+      type: "single",
+      question: "样板间推进停滞时，运营管理新人最需要补齐的信息是？",
+      options: ["只看最后签单数", "卡点、责任对象和下一步协同动作", "换一张海报", "直接通知客户"],
+      correct: 1,
+      explanation: "运营管理入门能力要能把停滞问题定位到卡点、责任和下一步动作。",
+    },
+    {
+      id: 4,
+      type: "single",
+      question: "活动转化差的复盘如果只看报名人数，会漏掉什么？",
+      options: ["过程质量和跟进节奏", "页面颜色", "员工头像", "天气记录"],
+      correct: 0,
+      explanation: "复盘要看触达质量、执行过程、跟进节奏和转化链路。",
+    },
+    {
+      id: 5,
+      type: "multiple",
+      question: "以下哪些表现说明运营管理新人具备基础胜任力？（多选）",
+      options: ["能定位异常来源", "能安排处理优先级", "能把问题回流到补训或流程优化", "只要求大家努力"],
+      correct: [0, 1, 2],
+      explanation: "运营管理的入门能力是判断、排序和闭环，不是泛泛要求。",
+    },
+  ],
+  designer: [
+    {
+      id: 1,
+      type: "single",
+      question: "设计师新人讲方案前，最先应该确认什么？",
+      options: ["客户核心需求和红线", "只展示效果图", "先讲优惠", "直接进入下单"],
+      correct: 0,
+      explanation: "设计师入门能力首先看能否围绕客户需求和红线组织方案表达。",
+    },
+    {
+      id: 2,
+      type: "multiple",
+      question: "审单前设计师新人必须自检哪些一致性？（多选）",
+      options: ["图纸版本", "报价范围", "工艺边界", "销售承诺口径"],
+      correct: [0, 1, 2, 3],
+      explanation: "图纸、报价、工艺和销售承诺任一不一致，都可能导致返工或审单异常。",
+    },
+    {
+      id: 3,
+      type: "single",
+      question: "客户问“为什么这样设计”时，设计师新人最合适的回应方式是？",
+      options: ["只说这是标准做法", "先复述需求，再解释设计取舍", "让销售解释", "直接承诺都能改"],
+      correct: 1,
+      explanation: "先复述需求能确认理解一致，再解释设计取舍，体现真实方案能力。",
+    },
+    {
+      id: 4,
+      type: "single",
+      question: "销售前面说的预算和设计方案对不上时，设计师新人应该怎么处理？",
+      options: ["忽略差异", "统一图纸版本、报价范围和待确认项", "让客户自己判断", "只改效果图"],
+      correct: 1,
+      explanation: "设计师要能把销售口径、图纸和报价收口，避免会审后返工。",
+    },
+    {
+      id: 5,
+      type: "multiple",
+      question: "以下哪些表现能证明设计师新人具备入门能力？（多选）",
+      options: ["能讲清方案取舍", "能识别图纸报价不一致", "能收口客户红线和待确认项", "只会展示效果图"],
+      correct: [0, 1, 2],
+      explanation: "设计师入门考核看真实作业能力，不只看展示能力。",
+    },
+  ],
+};
+
+function createKnowledgeLinkedOnboardingQuestions(learnerRole: LearnerRole): Question[] {
+  const seeds = getOnboardingKnowledgeSeeds(learnerRole).slice(0, 5);
+  const distractors = [
+    "只复述材料标题，不需要说明真实动作和风险边界",
+    "只记住来源文件名称，不需要结合岗位场景判断",
+    "遇到客户或业务问题时先承诺结果，再补流程依据",
+  ];
+
+  return seeds.map((seed, index) => {
+    const correctText = seed.assessmentFocus.replace(/^检查学员是否能/, "能");
+    const correctIndex = index % 4;
+    const options = [...distractors];
+    options.splice(correctIndex, 0, correctText);
+
+    return {
+      id: 1000 + index,
+      type: "single",
+      question: `知识库来源《${seed.sourceFile}》提到“${seed.competencyTags.join(" / ")}”，入门考核最应该验证新人什么能力？`,
+      options,
+      correct: correctIndex,
+      explanation: `来源：${seed.sourceFile}。依据片段：${seed.evidenceSnippets[0] || "该题来自会议提取文本转换后的岗位能力点。"}`,
+    };
+  });
+}
+
 const examInstructionMap: Record<string, string[]> = {
+  onboarding: [
+    "这是所有学习身份共用的新人入门能力摸底考核入口。",
+    "系统会按当前学习身份切换题目，用来判断新人是否真的具备对应岗位的基础胜任力。",
+    "未通过不建议直接上岗，应先进入补训或对应 AI 陪练，再重新考核。",
+  ],
   "1": [
     "本场考核重点验证你是否能把板材、环保、价格三连问讲清楚。",
     "题目会检查你能否把板材名词转成客户能理解的使用价值。",
@@ -378,12 +598,20 @@ const examInstructionMap: Record<string, string[]> = {
 };
 
 const prepPathMap: Record<string, string> = {
+  onboarding: "/learning/growth/retrain",
   "1": "/learning/course/1",
   "2": "/learning/course/4",
   "3": "/learning/course/3",
   "4": "/learning/course/6",
   "5": "/learning/course/9",
   "6": "/learning/course/11",
+};
+
+const onboardingPrepPathMap: Record<LearnerRole, string> = {
+  sales: "/learning/course/1",
+  community_ops: "/learning/course/6",
+  ops_manager: "/learning/course/9",
+  designer: "/learning/course/11",
 };
 
 const initialAnswers = (count = questions.length) => Array<AnswerValue>(count).fill(null);
@@ -396,6 +624,49 @@ function isQuestionCorrect(question: Question, answer: AnswerValue) {
   const normalizedAnswer = [...(((answer as number[]) ?? []))].sort((a, b) => a - b);
   const normalizedCorrect = [...(question.correct as number[])].sort((a, b) => a - b);
   return JSON.stringify(normalizedAnswer) === JSON.stringify(normalizedCorrect);
+}
+
+function getExamQuestions(exam: (typeof exams)[number] | null, learnerRole: LearnerRole) {
+  if (exam?.id === "onboarding") {
+    const knowledgeLinkedQuestions = createKnowledgeLinkedOnboardingQuestions(learnerRole);
+    return knowledgeLinkedQuestions.length >= 5 ? knowledgeLinkedQuestions : onboardingQuestionBank[learnerRole];
+  }
+
+  return exam ? questionBank[exam.id] || questions : questions;
+}
+
+function getExamInstructionList(
+  exam: (typeof exams)[number] | null,
+  learnerRole: LearnerRole,
+  learnerRoleMeta: ReturnType<typeof getLearnerRoleMeta>
+) {
+  if (exam?.id === "onboarding") {
+    const roleKnowledgeCount = generatedLearningKnowledgeMeta.summaryByRole[learnerRole] ?? 0;
+    const competencyNames = getRoleCompetencyTags(learnerRole).slice(0, 3).map((item) => item.tag);
+    return [
+      `当前按“${learnerRoleMeta.label}”身份出题，已连接 ${roleKnowledgeCount} 条会议提取文本。`,
+      `本场优先检查：${competencyNames.join("、") || "岗位基础能力"}。`,
+      ...examInstructionMap.onboarding,
+    ];
+  }
+
+  return exam ? examInstructionMap[exam.id] || examInstructionMap["1"] : [];
+}
+
+function getExamPrepPath(exam: (typeof exams)[number] | null, learnerRole: LearnerRole) {
+  if (exam?.id === "onboarding") {
+    return onboardingPrepPathMap[learnerRole];
+  }
+
+  return exam ? prepPathMap[exam.id] || "/learning/course/1" : "/learning/course/1";
+}
+
+function getExamDisplayDesc(exam: (typeof exams)[number], learnerRoleMeta: ReturnType<typeof getLearnerRoleMeta>) {
+  if (exam.id === "onboarding") {
+    return `统一入门考核入口，当前按${learnerRoleMeta.label}能力模型和会议提取文本出题，检查新人能否进入对应岗位实操`;
+  }
+
+  return exam.desc;
 }
 
 const assessmentSectionVisibility = {
@@ -418,7 +689,7 @@ export default function Assessment() {
   const visibleExams = currentIdentity === "student"
     ? exams.filter((exam) => exam.learnerRoles.includes(selectedLearnerRole))
     : exams;
-  const activeQuestions = selectedExam ? questionBank[selectedExam.id] || questions : questions;
+  const activeQuestions = getExamQuestions(selectedExam, selectedLearnerRole);
 
   const correctCount = useMemo(
     () => activeQuestions.filter((question, index) => isQuestionCorrect(question, answers[index])).length,
@@ -427,8 +698,8 @@ export default function Assessment() {
   const score = Math.round((correctCount / activeQuestions.length) * 100);
   const passed = score >= (selectedExam?.passingScore ?? 80);
   const wrongCount = activeQuestions.length - correctCount;
-  const instructionList = selectedExam ? examInstructionMap[selectedExam.id] || examInstructionMap["1"] : [];
-  const prepPath = selectedExam ? prepPathMap[selectedExam.id] || "/learning/course/1" : "/learning/course/1";
+  const instructionList = getExamInstructionList(selectedExam, selectedLearnerRole, learnerRoleMeta);
+  const prepPath = getExamPrepPath(selectedExam, selectedLearnerRole);
   const showAssessmentInstructionPrepGrid =
     assessmentSectionVisibility.instructionPrepActions || assessmentSectionVisibility.instructionPrepEntries;
 
@@ -451,7 +722,7 @@ export default function Assessment() {
   }, [stage, timeLeft]);
 
   const openInstructions = (exam: (typeof exams)[number]) => {
-    const nextQuestions = questionBank[exam.id] || questions;
+    const nextQuestions = getExamQuestions(exam, selectedLearnerRole);
     setSelectedExam(exam);
     setCurrentQ(0);
     setAnswers(initialAnswers(nextQuestions.length));
@@ -618,11 +889,13 @@ export default function Assessment() {
             </div>
 
             <h1 className="text-gray-900 mb-1">考前说明</h1>
-            <p className="text-sm text-gray-500 leading-relaxed mb-4">{selectedExam.title} · 开始作答前先看清本次重点和注意事项。</p>
+              <p className="text-sm text-gray-500 leading-relaxed mb-4">
+                {selectedExam.title} · {selectedExam.id === "onboarding" ? `当前按${learnerRoleMeta.label}能力模型出题，重点检查新人是否能进入真实岗位动作。` : "开始作答前先看清本次重点和注意事项。"}
+              </p>
 
             <div className="grid md:grid-cols-4 gap-3 mb-4">
               {[
-                { label: "题量", value: `${selectedExam.questionCount} 题`, icon: <FileText size={14} className="text-[#2F5FD0]" /> },
+                { label: "题量", value: `${activeQuestions.length} 题`, icon: <FileText size={14} className="text-[#2F5FD0]" /> },
                 { label: "时长", value: `${selectedExam.duration} 分钟`, icon: <Clock size={14} className="text-[#2F5FD0]" /> },
                 { label: "通过线", value: `${selectedExam.passingScore} 分`, icon: <ShieldCheck size={14} className="text-green-600" /> },
                 { label: "未通过后", value: "进入补训闭环", icon: <TriangleAlert size={14} className="text-amber-600" /> },
@@ -846,7 +1119,7 @@ export default function Assessment() {
             <h1 className="text-gray-900 mb-0.5">考核</h1>
             {currentIdentity === "student" && <span className="text-xs px-2 py-0.5 rounded-full bg-[#EAF1FF] text-[#2F5FD0]">{learnerRoleMeta.label}</span>}
           </div>
-          <p className="text-xs text-gray-500">按当前学习身份验证学习成果，未通过可进入补训闭环</p>
+          <p className="text-xs text-gray-500">先用统一入门考核确认新人是否具备对应岗位能力，未通过再进入补训闭环</p>
         </div>
       </div>
 
@@ -872,15 +1145,16 @@ export default function Assessment() {
                   )}
                 </div>
                 <h3 className="text-sm text-gray-900 mb-0.5">{exam.title}</h3>
-                <p className="text-xs text-gray-500 mb-2">{exam.desc}</p>
+                <p className="text-xs text-gray-500 mb-2">{getExamDisplayDesc(exam, learnerRoleMeta)}</p>
                 <div className="flex items-center gap-3 text-xs text-gray-400 flex-wrap">
-                  <span>{exam.questionCount} 题</span>
+                  <span>{getExamQuestions(exam, selectedLearnerRole).length} 题</span>
                   <span className="flex items-center gap-0.5">
                     <Clock size={9} />
                     {exam.duration} 分钟
                   </span>
                   <span>通过线 {exam.passingScore} 分</span>
                   <span className={exam.urgency === "warning" ? "text-[#F59E0B]" : ""}>{exam.deadline}</span>
+                  {exam.id === "onboarding" && <span className="text-[#2F5FD0]">按{learnerRoleMeta.label}出题</span>}
                 </div>
               </div>
               {exam.status !== "passed" && (

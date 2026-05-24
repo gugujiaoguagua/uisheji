@@ -29,6 +29,7 @@ import {
   designStandardsModules,
   designStandardsSummary,
 } from "../data/designStandardsData";
+import { getDynamicLearningCourses, getDynamicLearningPath } from "../data/dynamicLearningProfile";
 import { getLearnerRoleMeta, useApp } from "../context/AppContext";
 
 function StatusBadge({ status }: { status: CourseStatus }) {
@@ -85,11 +86,27 @@ export default function Learning() {
   const learnerRoleMeta = getLearnerRoleMeta(selectedLearnerRole);
   const isStudentView = currentIdentity === "student";
   const hasSearch = searchQuery.trim().length > 0;
+  const dynamicRoleCourses = useMemo(
+    () => isStudentView ? getDynamicLearningCourses(selectedLearnerRole) : [],
+    [isStudentView, selectedLearnerRole]
+  );
+  const dynamicLearningPath = useMemo(
+    () => getDynamicLearningPath(selectedLearnerRole),
+    [selectedLearnerRole]
+  );
   const matchesRole = (roles?: typeof courses[number]["learnerRoles"]) => !isStudentView || Boolean(roles?.includes(selectedLearnerRole));
-  const roleCourses = courses.filter((course) => matchesRole(course.learnerRoles));
-  const visibleCourses = hasSearch ? courses : roleCourses;
+  const baseRoleCourses = courses.filter((course) => matchesRole(course.learnerRoles));
+  const roleCourses = isStudentView ? dynamicRoleCourses : baseRoleCourses;
+  const visibleCourses = hasSearch ? [...courses, ...dynamicRoleCourses] : roleCourses;
+  const categoryOptions = useMemo(() => {
+    return Array.from(new Set([
+      "全部",
+      ...categories.filter((category) => category !== "全部"),
+      ...roleCourses.map((course) => course.category),
+    ]));
+  }, [roleCourses]);
   const visibleLearningPaths = isStudentView
-    ? learningPaths.filter((path) => path.learnerRole === selectedLearnerRole)
+    ? [dynamicLearningPath]
     : learningPaths;
   const visibleUpdateTopics = isStudentView
     ? updateTopics.filter((topic) => matchesRole(topic.learnerRoles))
@@ -248,7 +265,7 @@ export default function Learning() {
                           <p className="text-sm text-[#2F5FD0] mt-2.5">下一步：{path.nextAction}</p>
                         </div>
                         <button
-                          onClick={() => navigate(`/learning/course/${path.entryCourseId}`)}
+                          onClick={() => navigate(path.entryCourseId.startsWith("kb") ? "/learning/ai-practice" : `/learning/course/${path.entryCourseId}`)}
                           className="w-full sm:w-auto text-sm bg-[#2F5FD0] hover:bg-[#2550B8] text-white px-3.5 py-2.5 rounded-lg transition-colors"
                         >
                           继续本路径
@@ -380,7 +397,7 @@ export default function Learning() {
 
               <div className="px-4 py-3 border-b border-gray-100">
                 <div className="flex gap-1 overflow-x-auto hide-scrollbar">
-                  {categories.map((cat) => (
+                  {categoryOptions.map((cat) => (
                     <button
                       key={cat}
                       onClick={() => setActiveCategory(cat)}
@@ -400,7 +417,7 @@ export default function Learning() {
                 {filtered.map((course) => (
                   <div
                     key={course.id}
-                    onClick={() => navigate(`/learning/course/${course.id}`)}
+                    onClick={() => navigate(course.id.startsWith("kb-") ? "/learning/ai-practice" : `/learning/course/${course.id}`)}
                     className="px-4 py-4 hover:bg-gray-50 cursor-pointer transition-all"
                     style={{
                       borderLeft:
@@ -504,7 +521,7 @@ export default function Learning() {
                       {recommendedCourses.map((course) => (
                         <button
                           key={course.id}
-                          onClick={() => navigate(`/learning/course/${course.id}`)}
+                          onClick={() => navigate(course.id.startsWith("kb-") ? "/learning/ai-practice" : `/learning/course/${course.id}`)}
                           className="w-full min-w-0 text-left rounded-xl border border-gray-200 p-3 hover:border-[#2F5FD0]/30 hover:bg-[#FAFBFF] transition-colors"
                         >
                           <div className="flex items-center gap-2 flex-wrap mb-1">

@@ -34,6 +34,32 @@ type KbQueryPayload = {
   top_k?: number;
 };
 
+type AnswerSections = {
+  internal_explanation?: string;
+  basis_summary?: string[];
+  risk_boundary?: string;
+  next_step?: string;
+};
+
+type SourceRoot = {
+  label: string;
+  path: string;
+};
+
+type LastQueryStatus = {
+  status: "idle" | "ok" | "fallback" | "error";
+  checked_at?: string;
+  question?: string;
+  role_hint?: string;
+  hit_count?: number;
+  top_score?: number;
+  confidence?: string;
+  fallback_reason?: string;
+  model?: string;
+  latency_ms?: number;
+  error?: string;
+};
+
 function loadLocalEnv() {
   for (const filename of [".env.local", ".env"]) {
     const envPath = path.resolve(process.cwd(), filename);
@@ -50,7 +76,9 @@ function loadLocalEnv() {
 loadLocalEnv();
 
 const DEFAULT_DATA_ROOT = "D:/AI课程/1数据整理";
+const DEFAULT_EXTRACTED_TEXT_ROOT = "D:/AI课程/4-17会议文档/1.提取文本";
 const dataRoot = process.env.ZHIYOU_DATA_ROOT || DEFAULT_DATA_ROOT;
+const extractedTextRoot = process.env.ZHIYOU_EXTRACTED_TEXT_ROOT || DEFAULT_EXTRACTED_TEXT_ROOT;
 const kbRoot = process.env.ZHIYOU_KB_ROOT || path.join(dataRoot, "2.知识库");
 const officialRoot = path.join(kbRoot, "4.正式知识库");
 const structuredRoot = path.join(kbRoot, "5.结构化数据集");
@@ -62,6 +90,14 @@ const minimaxApiStyle = process.env.MINIMAX_API_STYLE || (minimaxBaseUrl.include
 
 let cachedEntries: KbEntry[] | null = null;
 let cachedAt = "";
+let cachedLoadStats: {
+  source_file_count: number;
+  parsed_entry_count: number;
+  filtered_entry_count: number;
+  roots: Array<SourceRoot & { exists: boolean; file_count: number; current_entry_count: number }>;
+  recent_files: Array<{ name: string; relative_path: string; updated_at: string; size: number }>;
+} | null = null;
+let lastQueryStatus: LastQueryStatus = { status: "idle" };
 
 function sendJson(res: ServerResponse, statusCode: number, payload: unknown) {
   res.statusCode = statusCode;
@@ -118,6 +154,39 @@ function walkFiles(dir: string, extensions: string[]) {
   return result;
 }
 
+function getSourceRoots(): SourceRoot[] {
+  return [
+    { label: "正式知识库", path: officialRoot },
+    { label: "会议提取文本", path: extractedTextRoot },
+    { label: "会议提取文本-流程清单", path: path.join(extractedTextRoot, "流程清单") },
+    { label: "录音处理后", path: path.join(dataRoot, "录音", "录音处理后") },
+    { label: "文档处理后", path: path.join(dataRoot, "文档", "文档处理后") },
+    { label: "录音文本", path: path.join(dataRoot, "录音", "录音文本") },
+    { label: "文档文本", path: path.join(dataRoot, "文档", "文档文本") },
+  ];
+}
+
+function fileUpdatedAt(filePath: string) {
+  try {
+    return fs.statSync(filePath).mtime.toISOString();
+  } catch {
+    return "";
+  }
+}
+
+function fileSize(filePath: string) {
+  try {
+    return fs.statSync(filePath).size;
+  } catch {
+    return 0;
+  }
+}
+
+function isPathInside(filePath: string, root: string) {
+  const relative = path.relative(root, filePath);
+  return Boolean(relative) && !relative.startsWith("..") && !path.isAbsolute(relative);
+}
+
 function cleanScalar(value: string) {
   const trimmed = value.trim();
   return trimmed.replace(/^['"]|['"]$/g, "");
@@ -166,18 +235,12 @@ function asArray(meta: KbMeta, key: string) {
 function loadEntries() {
   if (cachedEntries) return cachedEntries;
 
-  const roots = [
-    officialRoot,
-    path.join(dataRoot, "录音", "录音处理后"),
-    path.join(dataRoot, "文档", "文档处理后"),
-    path.join(dataRoot, "录音", "录音文本"),
-    path.join(dataRoot, "文档", "文档文本"),
-  ];
+  const roots = getSourceRoots();
   const files = Array.from(new Set([
-    ...roots.flatMap((root) => walkFiles(root, [".md", ".txt"])),
+    ...roots.flatMap((root) => walkFiles(root.path, [".md", ".txt"])),
     ...walkFiles(dataRoot, [".md", ".txt"]).filter((filePath) => path.dirname(filePath) === dataRoot),
   ]));
-  cachedEntries = files
+  const parsedEntries = files
     .map((filePath) => {
       const markdown = fs.readFileSync(filePath, "utf-8");
       const { meta, body } = parseFrontmatter(markdown);
@@ -207,11 +270,35 @@ function loadEntries() {
         relativePath,
         body,
       };
-    })
-    .filter((entry) => {
-      if (!entry.status && !entry.review_status) return true;
-      return (!entry.status || entry.status === "current") && (!entry.review_status || entry.review_status === "approved");
     });
+  cachedEntries = parsedEntries.filter((entry) => {
+    if (!entry.status && !entry.review_status) return true;
+    return (!entry.status || entry.status === "current") && (!entry.review_status || entry.review_status === "approved");
+  });
+
+  cachedLoadStats = {
+    source_file_count: files.length,
+    parsed_entry_count: parsedEntries.length,
+    filtered_entry_count: parsedEntries.length - cachedEntries.length,
+    roots: roots.map((root) => {
+      const rootFiles = files.filter((filePath) => isPathInside(filePath, root.path));
+      return {
+        ...root,
+        exists: fs.existsSync(root.path),
+        file_count: rootFiles.length,
+        current_entry_count: cachedEntries?.filter((entry) => isPathInside(entry.filePath, root.path)).length || 0,
+      };
+    }),
+    recent_files: files
+      .map((filePath) => ({
+        name: path.basename(filePath),
+        relative_path: path.relative(dataRoot, filePath).replace(/\\/g, "/"),
+        updated_at: fileUpdatedAt(filePath),
+        size: fileSize(filePath),
+      }))
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+      .slice(0, 8),
+  };
 
   cachedAt = new Date().toISOString();
   return cachedEntries;
@@ -219,18 +306,31 @@ function loadEntries() {
 
 function getHealth() {
   const entries = loadEntries();
+  const stats = cachedLoadStats;
   return {
     kb_snapshot_id: snapshotId,
     data_root: dataRoot,
     source_root: officialRoot,
     structured_root: structuredRoot,
     entry_count: entries.length,
+    source_file_count: stats?.source_file_count || entries.length,
+    parsed_entry_count: stats?.parsed_entry_count || entries.length,
+    filtered_entry_count: stats?.filtered_entry_count || 0,
     structured_file_count: walkFiles(structuredRoot, [".md", ".txt", ".csv"]).length,
+    source_roots: stats?.roots || [],
+    recent_files: stats?.recent_files || [],
+    minimax: {
+      configured: Boolean(minimaxApiKey),
+      model: minimaxModel,
+      api_style: minimaxApiStyle,
+      base_url: minimaxBaseUrl.replace(/sk-[A-Za-z0-9_-]+/g, "[redacted]"),
+    },
     filters: {
       status: "current",
       review_status: "approved",
       answer_source: "2.知识库/4.正式知识库",
     },
+    last_query: lastQueryStatus,
     indexed_at: cachedAt,
   };
 }
@@ -343,10 +443,45 @@ function extractExcerpts(entry: KbEntry, tokens: string[]) {
   return ranked.length ? ranked : [extractDirectAnswer(entry).slice(0, 260)];
 }
 
+function getMatchedTerms(entry: KbEntry, tokens: string[]) {
+  const searchable = normalizeText([
+    entry.title,
+    entry.summary,
+    entry.knowledge_type,
+    entry.category,
+    entry.source_file,
+    entry.source_section,
+    ...entry.tags,
+    ...entry.applicable_roles,
+    ...entry.applicable_scenes,
+    entry.body.slice(0, 12000),
+  ].join(" "));
+
+  return Array.from(new Set(tokens
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 2 && searchable.includes(normalizeText(token)))))
+    .slice(0, 8);
+}
+
+function buildMatchReason(entry: KbEntry, matchedTerms: string[]) {
+  const reasons: string[] = [];
+  if (entry.authority_level === "official" || entry.review_status === "approved") reasons.push("正式知识库条目");
+  if (entry.kb_revision) reasons.push(`知识版本 ${entry.kb_revision}`);
+  if (matchedTerms.length) reasons.push(`命中 ${matchedTerms.slice(0, 4).join("、")}`);
+  if (entry.applicable_roles.length) reasons.push(`适用 ${entry.applicable_roles.slice(0, 3).join("、")}`);
+  return reasons.length ? reasons : ["内容与问题语义相关"];
+}
+
 function buildAnswer(question: string, hits: Array<{ entry: KbEntry; score: number }>, tokens: string[]) {
   const primary = hits[0].entry;
   const directAnswer = extractDirectAnswer(primary);
   const excerpts = hits.slice(0, 3).flatMap((hit) => extractExcerpts(hit.entry, tokens).slice(0, 1));
+  const answerSections = {
+    internal_explanation: directAnswer,
+    basis_summary: excerpts,
+    risk_boundary: "涉及规则、价格、责任界定或交期承诺时，以当前正式知识库最新发布口径为准；未命中的细节不要自行承诺。",
+    next_step: "如客户追问具体尺寸、价格、版本或责任归属，建议继续补充关键信息后再次检索，或转人工复核。",
+  };
 
   return {
     direct_answer: directAnswer,
@@ -354,29 +489,61 @@ function buildAnswer(question: string, hits: Array<{ entry: KbEntry; score: numb
       `**结论：**${directAnswer}`,
       "",
       "**依据摘要：**",
-      ...excerpts.map((excerpt) => `• ${excerpt}`),
+      ...answerSections.basis_summary.map((excerpt) => `• ${excerpt}`),
       "",
-      "**风险提醒：**涉及规则、价格、责任界定或交期承诺时，以当前正式知识库最新发布口径为准；未命中的细节不要自行承诺。",
+      `**风险提醒：**${answerSections.risk_boundary}`,
       "",
-      "**下一步建议：**如客户追问具体尺寸、价格、版本或责任归属，建议继续补充关键信息后再次检索，或转人工复核。",
+      `**下一步建议：**${answerSections.next_step}`,
     ].join("\n"),
-    citations: hits.slice(0, 5).map(({ entry, score }) => ({
-      id: entry.id,
-      title: entry.title,
-      knowledge_type: entry.knowledge_type,
-      source_id: entry.source_id,
-      source_file: entry.source_file,
-      source_section: entry.source_section,
-      version: entry.version,
-      kb_revision: entry.kb_revision,
-      relative_path: entry.relativePath,
-      score,
-    })),
+    answer_sections: answerSections,
+    citations: hits.slice(0, 5).map(({ entry, score }) => {
+      const matchedTerms = getMatchedTerms(entry, tokens);
+      return {
+        id: entry.id,
+        title: entry.title,
+        knowledge_type: entry.knowledge_type,
+        authority_level: entry.authority_level,
+        source_id: entry.source_id,
+        source_file: entry.source_file,
+        source_section: entry.source_section,
+        version: entry.version,
+        kb_revision: entry.kb_revision,
+        relative_path: entry.relativePath,
+        category: entry.category,
+        updated_at: entry.updated_at,
+        applicable_roles: entry.applicable_roles,
+        applicable_scenes: entry.applicable_scenes,
+        tags: entry.tags,
+        matched_terms: matchedTerms,
+        match_reason: buildMatchReason(entry, matchedTerms),
+        score,
+        excerpt: extractExcerpts(entry, tokens)[0],
+      };
+    }),
   };
 }
 
 function stripThinkTags(value: string) {
   return value.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+}
+
+function cleanModelJsonText(value: string) {
+  return stripThinkTags(value)
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```$/i, "")
+    .trim();
+}
+
+function isJsonLikeText(value: string) {
+  const cleaned = cleanModelJsonText(value);
+  return (
+    /^\s*[{[]/.test(cleaned) ||
+    cleaned.includes('\\"direct_answer\\"') ||
+    cleaned.includes('"direct_answer"') ||
+    cleaned.includes('\\"answer_sections\\"') ||
+    cleaned.includes('"answer_sections"')
+  );
 }
 
 function pickFirstSentence(value: string) {
@@ -387,20 +554,108 @@ function pickFirstSentence(value: string) {
     ?.slice(0, 180) || "我先基于知识库给您核实口径。";
 }
 
-function extractJsonObject(value: string) {
-  const cleaned = stripThinkTags(value)
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/```$/i, "")
-    .trim();
+function extractJsonObject(value: string): Record<string, unknown> | null {
+  const cleaned = cleanModelJsonText(value);
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
-  if (start < 0 || end <= start) return null;
-  try {
-    return JSON.parse(cleaned.slice(start, end + 1)) as { direct_answer?: string; answer?: string };
-  } catch {
-    return null;
+
+  const candidates = [cleaned];
+
+  if (start >= 0 && end > start) {
+    candidates.push(cleaned.slice(start, end + 1));
   }
+
+  if (cleaned.includes('\\"')) {
+    candidates.push(cleaned.replace(/\\"/g, '"').replace(/\\n/g, "\n"));
+    if (start >= 0 && end > start) {
+      candidates.push(cleaned.slice(start, end + 1).replace(/\\"/g, '"').replace(/\\n/g, "\n"));
+    }
+  }
+
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate);
+      if (typeof parsed === "string") {
+        const nested = extractJsonObject(parsed);
+        if (nested) return nested;
+      }
+      if (parsed && typeof parsed === "object") {
+        return parsed as Record<string, unknown>;
+      }
+    } catch {
+      // Try the next candidate. MiniMax occasionally returns escaped JSON text.
+    }
+  }
+
+  return null;
+}
+
+function asStringValue(value: unknown) {
+  if (typeof value === "string") return value.trim();
+  if (Array.isArray(value)) {
+    return value.map((item) => asStringValue(item)).filter(Boolean).join("\n");
+  }
+  return "";
+}
+
+function asStringArray(value: unknown) {
+  if (Array.isArray(value)) {
+    return value.map((item) => asStringValue(item)).filter(Boolean);
+  }
+  const text = asStringValue(value);
+  if (!text) return [];
+  return text
+    .split(/\n|(?:^|\s)[•\-]\s+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeModelObject(value: unknown): Record<string, unknown> | null {
+  if (!value) return null;
+  if (typeof value === "string") return extractJsonObject(value);
+  if (typeof value === "object") return value as Record<string, unknown>;
+  return null;
+}
+
+function hasUsefulSections(sections: AnswerSections) {
+  return Boolean(
+    sections.internal_explanation ||
+    sections.basis_summary?.length ||
+    sections.risk_boundary ||
+    sections.next_step
+  );
+}
+
+function normalizeAnswerSections(source: Record<string, unknown>, fallback: AnswerSections): AnswerSections {
+  const nestedSections = normalizeModelObject(source.answer_sections) || {};
+  const merged = {
+    ...source,
+    ...nestedSections,
+  };
+  const sections: AnswerSections = {
+    internal_explanation: asStringValue(
+      merged.internal_explanation || merged.internal || merged.explanation || merged.detail || merged.answer
+    ),
+    basis_summary: asStringArray(merged.basis_summary || merged.basis || merged.evidence || merged.sources),
+    risk_boundary: asStringValue(merged.risk_boundary || merged.risk || merged.boundary || merged.warning),
+    next_step: asStringValue(merged.next_step || merged.next_steps || merged.suggestion || merged.action),
+  };
+
+  return {
+    internal_explanation: sections.internal_explanation || fallback.internal_explanation,
+    basis_summary: sections.basis_summary?.length ? sections.basis_summary.slice(0, 5) : fallback.basis_summary,
+    risk_boundary: sections.risk_boundary || fallback.risk_boundary,
+    next_step: sections.next_step || fallback.next_step,
+  };
+}
+
+function buildPlainAnswerFromSections(sections: AnswerSections) {
+  return [
+    sections.internal_explanation ? `**详细解释：**${sections.internal_explanation}` : "",
+    sections.basis_summary?.length ? ["", "**依据摘要：**", ...sections.basis_summary.map((item) => `• ${item}`)].join("\n") : "",
+    sections.risk_boundary ? `\n**风险提醒：**${sections.risk_boundary}` : "",
+    sections.next_step ? `\n**下一步建议：**${sections.next_step}` : "",
+  ].filter(Boolean).join("\n");
 }
 
 function buildMiniMaxPrompt(question: string, hits: Array<{ entry: KbEntry; score: number }>, tokens: string[]) {
@@ -417,8 +672,8 @@ function buildMiniMaxPrompt(question: string, hits: Array<{ entry: KbEntry; scor
   return [
     "你是智柚内部知识库问答助手。",
     "必须只依据下面提供的知识库片段回答；如果片段不足，明确说明不能承诺，不要编造。",
-    "输出严格 JSON，不要输出 Markdown 代码块：",
-    '{"direct_answer":"可直接对客户说的话，80字以内","answer":"内部详细解释，包含依据摘要、风险提醒、下一步建议"}',
+    "输出严格 JSON 对象，不要输出 Markdown 代码块，也不要把 JSON 再包成字符串。",
+    '{"direct_answer":"可直接对客户说的话，80字以内","answer_sections":{"internal_explanation":"内部解释","basis_summary":["依据1","依据2"],"risk_boundary":"风险边界","next_step":"下一步建议"}}',
     "",
     `用户问题：${question}`,
     "",
@@ -428,11 +683,32 @@ function buildMiniMaxPrompt(question: string, hits: Array<{ entry: KbEntry; scor
 }
 
 function parseMiniMaxAnswer(content: string, question: string, hits: Array<{ entry: KbEntry; score: number }>, tokens: string[]) {
+  const fallback = buildAnswer(question, hits, tokens);
   const parsed = extractJsonObject(content);
-  const answer = stripThinkTags(parsed?.answer || content);
+  const nestedDirectAnswer = normalizeModelObject(parsed?.direct_answer);
+  const nestedAnswer = normalizeModelObject(parsed?.answer);
+  const nestedSections = normalizeModelObject(parsed?.answer_sections);
+  const merged = {
+    ...(parsed || {}),
+    ...(nestedAnswer || {}),
+    ...(nestedDirectAnswer || {}),
+    ...(nestedSections ? { answer_sections: nestedSections } : {}),
+  };
+
+  const sections = normalizeAnswerSections(merged, fallback.answer_sections);
+  const rawDirectAnswer = asStringValue(merged.direct_answer);
+  const directAnswer = rawDirectAnswer && !isJsonLikeText(rawDirectAnswer)
+    ? rawDirectAnswer
+    : sections.internal_explanation || fallback.direct_answer;
+  const rawAnswer = asStringValue(merged.answer);
+  const plainAnswer = hasUsefulSections(sections)
+    ? buildPlainAnswerFromSections(sections)
+    : (!isJsonLikeText(rawAnswer) ? stripThinkTags(rawAnswer) : fallback.answer);
+
   return {
-    direct_answer: stripMarkdown(parsed?.direct_answer || pickFirstSentence(answer)),
-    answer: answer || buildAnswer(question, hits, tokens).answer,
+    direct_answer: stripMarkdown(directAnswer || pickFirstSentence(plainAnswer)),
+    answer: plainAnswer || buildAnswer(question, hits, tokens).answer,
+    answer_sections: sections,
   };
 }
 
@@ -521,12 +797,22 @@ async function callMiniMax(question: string, hits: Array<{ entry: KbEntry; score
 }
 
 async function queryKnowledgeBase(payload: KbQueryPayload) {
+  const startedAt = Date.now();
   const question = payload.question?.trim() || "";
   const topK = Math.min(Math.max(payload.top_k || 5, 1), 10);
   const entries = loadEntries();
   const tokens = buildTokens(question);
 
   if (!question || tokens.length === 0) {
+    lastQueryStatus = {
+      status: "fallback",
+      checked_at: new Date().toISOString(),
+      question,
+      role_hint: payload.role_hint,
+      hit_count: 0,
+      fallback_reason: "empty_question",
+      latency_ms: Date.now() - startedAt,
+    };
     return {
       answer: "知识库暂无依据：请先输入完整问题。",
       direct_answer: "请先输入完整问题，我再检索正式知识库。",
@@ -546,6 +832,16 @@ async function queryKnowledgeBase(payload: KbQueryPayload) {
     .slice(0, topK);
 
   if (!hits.length || hits[0].score < 6) {
+    lastQueryStatus = {
+      status: "fallback",
+      checked_at: new Date().toISOString(),
+      question,
+      role_hint: payload.role_hint,
+      hit_count: hits.length,
+      top_score: hits[0]?.score || 0,
+      fallback_reason: "low_confidence_or_no_hit",
+      latency_ms: Date.now() - startedAt,
+    };
     return {
       answer: "知识库暂无足够依据，不能直接给客户承诺。建议补充产品型号、空间场景、价格口径或订单状态后再查，或发起知识补充。",
       direct_answer: "这个问题我先帮您核实一下，稍后把准确口径回给您。",
@@ -560,16 +856,33 @@ async function queryKnowledgeBase(payload: KbQueryPayload) {
 
   const confidence = hits[0].score >= 18 ? "high" : "mid";
   const extractiveAnswer = buildAnswer(question, hits, tokens);
-  let llmAnswer: { direct_answer: string; answer: string } | null = null;
+  let llmAnswer: { direct_answer: string; answer: string; answer_sections?: AnswerSections } | null = null;
+  let modelError = "";
 
   try {
     llmAnswer = await callMiniMax(question, hits, tokens);
   } catch (error) {
+    modelError = error instanceof Error ? error.message : "调用失败";
     llmAnswer = {
       direct_answer: extractiveAnswer.direct_answer,
-      answer: `${extractiveAnswer.answer}\n\n**MiniMax 状态：**${error instanceof Error ? error.message : "调用失败"}，当前已回退为本地知识库摘要。`,
+      answer: `${extractiveAnswer.answer}\n\n**MiniMax 状态：**${modelError}，当前已回退为本地知识库摘要。`,
+      answer_sections: extractiveAnswer.answer_sections,
     };
   }
+
+  lastQueryStatus = {
+    status: modelError ? "fallback" : "ok",
+    checked_at: new Date().toISOString(),
+    question,
+    role_hint: payload.role_hint,
+    hit_count: hits.length,
+    top_score: hits[0].score,
+    confidence,
+    fallback_reason: modelError ? "minimax_error_local_extractive_used" : undefined,
+    model: llmAnswer ? minimaxModel : "local-extractive",
+    latency_ms: Date.now() - startedAt,
+    error: modelError || undefined,
+  };
 
   return {
     ...extractiveAnswer,
@@ -611,6 +924,11 @@ function registerKbRoutes(server: KbServer) {
       const payload = await readJson(req);
       sendJson(res, 200, await queryKnowledgeBase(payload));
     } catch (error) {
+      lastQueryStatus = {
+        status: "error",
+        checked_at: new Date().toISOString(),
+        error: error instanceof Error ? error.message : "知识库查询失败",
+      };
       sendJson(res, 500, { error: error instanceof Error ? error.message : "知识库查询失败" });
     }
   });

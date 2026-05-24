@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Dumbbell,
   ChevronRight,
@@ -6,7 +6,6 @@ import {
   Target,
   Mic,
   MicOff,
-  Send,
   RotateCcw,
   CheckCircle2,
   TrendingUp,
@@ -23,8 +22,26 @@ import {
 } from "lucide-react";
 import type { LearnerRole } from "../context/AppContext";
 import { getLearnerRoleMeta, useApp } from "../context/AppContext";
+import { getPracticeKnowledgeSeeds } from "../data/learningKnowledgeMap";
 
-type Stage = "scene-select" | "briefing" | "session" | "result";
+type Stage = "scene-select" | "briefing" | "session" | "result" | "failed";
+type VoiceStatus = "idle" | "recording" | "processing";
+type SessionPhase = "idle" | "countdown" | "customer-speaking" | "answering" | "answered" | "failed";
+
+type SpeechRecognitionLike = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((event: {
+    resultIndex: number;
+    results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>;
+  }) => void) | null;
+  onerror: ((event: { error?: string }) => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
 interface Scenario {
   id: string;
@@ -36,6 +53,18 @@ interface Scenario {
   riskTag?: string;
   lastScore?: number;
   recommended?: boolean;
+}
+
+interface PracticeQuestion {
+  id: string;
+  scenarioId: string;
+  learnerRoles: LearnerRole[];
+  category: string;
+  customerPrompt: string;
+  voiceScript: string;
+  expectedKeywords: string[];
+  timeoutSeconds: number;
+  isMakeup?: boolean;
 }
 
 const scenarios: Scenario[] = [
@@ -163,6 +192,113 @@ const scenarios: Scenario[] = [
   },
 ];
 
+const AI_PRACTICE_RESPONSE_TIMEOUT_SECONDS = 60;
+
+const practiceQuestionBank: PracticeQuestion[] = [
+  {
+    id: "sales-board-regular-001",
+    scenarioId: "1",
+    learnerRoles: ["sales"],
+    category: "产品讲解",
+    customerPrompt: "LSB 和颗粒板到底差在哪？为什么我要多花这笔钱？",
+    voiceScript: "我想问一下，LSB 和颗粒板到底差在哪？为什么我家要多花这笔钱？你别讲太专业，就说和我家使用有什么关系。",
+    expectedKeywords: ["稳定", "环保", "使用", "预算", "空间"],
+    timeoutSeconds: AI_PRACTICE_RESPONSE_TIMEOUT_SECONDS,
+  },
+  {
+    id: "sales-board-makeup-001",
+    scenarioId: "1",
+    learnerRoles: ["sales"],
+    category: "产品讲解补考",
+    customerPrompt: "你说板材更好，那它对我家衣柜日常使用到底有什么影响？",
+    voiceScript: "你说板材更好，那它对我家衣柜日常使用到底有什么影响？请你用我能听懂的话说明，不要只背板材名词。",
+    expectedKeywords: ["衣柜", "变形", "环保", "耐用", "预算"],
+    timeoutSeconds: AI_PRACTICE_RESPONSE_TIMEOUT_SECONDS,
+    isMakeup: true,
+  },
+  {
+    id: "sales-hardware-regular-001",
+    scenarioId: "2",
+    learnerRoles: ["sales", "designer"],
+    category: "五金讲解",
+    customerPrompt: "衣柜五金为什么还要单独加钱？哪些是真的值得留？",
+    voiceScript: "衣柜五金为什么还要单独加钱？如果我预算有限，你告诉我哪些是真的值得留，哪些可以先不要。",
+    expectedKeywords: ["生活习惯", "高频", "铰链", "阻尼", "取舍"],
+    timeoutSeconds: AI_PRACTICE_RESPONSE_TIMEOUT_SECONDS,
+  },
+  {
+    id: "sales-reception-regular-001",
+    scenarioId: "3",
+    learnerRoles: ["sales"],
+    category: "接待流程",
+    customerPrompt: "我就是随便看看，还没想好预算和要做哪些空间。",
+    voiceScript: "我们今天就是随便看看，还没想好预算，也没想好要做哪些空间。你现在准备怎么问我，才不会让我有压力？",
+    expectedKeywords: ["户型", "重点空间", "预算", "常住人口", "红线"],
+    timeoutSeconds: AI_PRACTICE_RESPONSE_TIMEOUT_SECONDS,
+  },
+  {
+    id: "sales-order-regular-001",
+    scenarioId: "4",
+    learnerRoles: ["sales"],
+    category: "下单规范",
+    customerPrompt: "我想临时改尺寸和颜色，之前口头说过可以改，为什么现在还要确认？",
+    voiceScript: "我想临时改尺寸和颜色，之前不是口头说过可以改吗？为什么现在还要确认、还要签字？",
+    expectedKeywords: ["非标", "版本", "签字", "交期", "责任"],
+    timeoutSeconds: AI_PRACTICE_RESPONSE_TIMEOUT_SECONDS,
+  },
+  {
+    id: "designer-plan-regular-001",
+    scenarioId: "11",
+    learnerRoles: ["designer"],
+    category: "方案讲解",
+    customerPrompt: "这个方案能不能说清楚为什么这样设计？预算和销售说的能对上吗？",
+    voiceScript: "这个方案我看着还可以，但你能不能说清楚为什么这样设计？预算和前面销售说的能对上吗？",
+    expectedKeywords: ["需求", "图纸", "报价", "边界", "确认"],
+    timeoutSeconds: AI_PRACTICE_RESPONSE_TIMEOUT_SECONDS,
+  },
+  {
+    id: "ops-resource-regular-001",
+    scenarioId: "6",
+    learnerRoles: ["community_ops", "ops_manager"],
+    category: "资源开拓",
+    customerPrompt: "门店说没有新资源，小区群人数上不去，你准备怎么推进？",
+    voiceScript: "这个小区我们跟了两周，群人数还是上不去，门店也说没什么新资源。你准备怎么拆原因、怎么推进？",
+    expectedKeywords: ["资源池", "门店", "责任人", "截止时间", "回执"],
+    timeoutSeconds: AI_PRACTICE_RESPONSE_TIMEOUT_SECONDS,
+  },
+];
+
+const knowledgeLearnerRoles: LearnerRole[] = ["sales", "community_ops", "ops_manager", "designer"];
+
+const knowledgeLinkedScenarios: Scenario[] = knowledgeLearnerRoles.flatMap((role) =>
+  getPracticeKnowledgeSeeds(role).slice(0, 4).map((seed, index) => ({
+    id: `kb-${role}-${seed.id}`,
+    title: seed.title,
+    difficulty: index < 2 ? "medium" : "hard",
+    category: seed.competencyTags[0] || "知识库练习",
+    learnerRoles: [role],
+    desc: `${seed.prompt} 来源：${seed.sourceFile}`,
+    riskTag: "知识库联动",
+    recommended: index === 0,
+  }))
+);
+
+const knowledgeLinkedPracticeQuestionBank: PracticeQuestion[] = knowledgeLearnerRoles.flatMap((role) =>
+  getPracticeKnowledgeSeeds(role).slice(0, 4).map((seed) => ({
+    id: `kb-practice-${role}-${seed.id}`,
+    scenarioId: `kb-${role}-${seed.id}`,
+    learnerRoles: [role],
+    category: seed.competencyTags[0] || "知识库练习",
+    customerPrompt: seed.prompt,
+    voiceScript: `${seed.prompt} 请你按真实客户沟通方式回答，不要背材料标题，要说出下一步动作。`,
+    expectedKeywords: seed.competencyTags.length ? seed.competencyTags : ["客户", "动作", "风险", "下一步"],
+    timeoutSeconds: AI_PRACTICE_RESPONSE_TIMEOUT_SECONDS,
+  }))
+);
+
+const allPracticeScenarios = [...scenarios, ...knowledgeLinkedScenarios];
+const allPracticeQuestionBank = [...practiceQuestionBank, ...knowledgeLinkedPracticeQuestionBank];
+
 const mockConversation = [
   { role: "customer", content: "你们一直说 LSB 板更好，但我看别家颗粒板也差不多，为什么要多花这笔钱？" },
   { role: "user", content: "您问得很关键。板材不能只看名字，我会从稳定性、环保表达和后期使用三个角度给您讲清楚。" },
@@ -224,19 +360,20 @@ const designerConversation = [
 ];
 
 function getInitialConversation(scenario?: Scenario | null) {
-  if (scenario?.learnerRoles.includes("sales") && salesConversationMap[scenario.id]) {
-    return salesConversationMap[scenario.id];
-  }
+  const question = getPracticeQuestion(scenario);
+  return [{ role: "customer", content: question.customerPrompt }];
+}
 
-  if (scenario?.category === "方案讲解") {
-    return designerConversation;
-  }
+function getPracticeQuestion(scenario?: Scenario | null, makeup = false) {
+  const byScenario = allPracticeQuestionBank.find((question) => question.scenarioId === scenario?.id && Boolean(question.isMakeup) === makeup);
+  if (byScenario) return byScenario;
 
-  if (["资源开拓", "社群运营", "指标异常", "转化复盘"].includes(scenario?.category || "")) {
-    return opsConversation;
-  }
+  const byRole = allPracticeQuestionBank.find(
+    (question) => Boolean(question.isMakeup) === makeup && question.learnerRoles.some((role) => scenario?.learnerRoles.includes(role))
+  );
+  if (byRole) return byRole;
 
-  return mockConversation;
+  return allPracticeQuestionBank[0];
 }
 
 const resultData = {
@@ -467,15 +604,38 @@ export default function AIPractice() {
   const [stage, setStage] = useState<Stage>("scene-select");
   const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
   const [messages, setMessages] = useState(mockConversation);
-  const [inputValue, setInputValue] = useState("");
   const [isRecording, setIsRecording] = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>("idle");
+  const [voiceTranscript, setVoiceTranscript] = useState("");
+  const [voiceElapsed, setVoiceElapsed] = useState(0);
+  const [voiceError, setVoiceError] = useState("");
+  const [voiceViolation, setVoiceViolation] = useState(false);
+  const [sessionPhase, setSessionPhase] = useState<SessionPhase>("idle");
+  const [countdownValue, setCountdownValue] = useState(3);
+  const [currentPracticeQuestion, setCurrentPracticeQuestion] = useState<PracticeQuestion>(getPracticeQuestion(null));
+  const [responseSecondsLeft, setResponseSecondsLeft] = useState(AI_PRACTICE_RESPONSE_TIMEOUT_SECONDS);
+  const [failureReason, setFailureReason] = useState("");
+  const [isMakeupMode, setIsMakeupMode] = useState(false);
   const [activeCategory, setActiveCategory] = useState("全部");
+  const isRecordingRef = useRef(false);
+  const hasDetectedAnswerRef = useRef(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const voiceTimerRef = useRef<number | null>(null);
+  const countdownTimerRef = useRef<number | null>(null);
+  const responseTimerRef = useRef<number | null>(null);
+  const responseTimeoutRef = useRef<number | null>(null);
+  const voiceStartedAtRef = useRef(0);
+  const voiceTranscriptRef = useRef("");
 
   const { user, currentIdentity } = useApp();
   const selectedLearnerRole = user?.learnerRole ?? "sales";
   const learnerRoleMeta = getLearnerRoleMeta(selectedLearnerRole);
   const isStudentView = currentIdentity === "student";
-  const roleScenarios = isStudentView ? scenarios.filter((scenario) => scenario.learnerRoles.includes(selectedLearnerRole)) : scenarios;
+  const roleScenarios = isStudentView
+    ? allPracticeScenarios.filter((scenario) => scenario.learnerRoles.includes(selectedLearnerRole))
+    : allPracticeScenarios;
   const categories = ["全部", ...Array.from(new Set(roleScenarios.map((scenario) => scenario.category)))];
 
   const filteredScenarios = activeCategory === "全部" ? roleScenarios : roleScenarios.filter((s) => s.category === activeCategory);
@@ -496,6 +656,372 @@ export default function AIPractice() {
   const aiPracticeSessionLayoutClass = showAIPracticeSessionRightRail
     ? "max-w-6xl mx-auto w-full px-4 py-4 grid lg:grid-cols-[minmax(0,1fr)_320px] gap-4 flex-1 overflow-hidden"
     : "max-w-6xl mx-auto w-full px-4 py-4 grid gap-4 flex-1 overflow-hidden";
+
+  const resetVoiceAnswerState = (timeoutSeconds = currentPracticeQuestion.timeoutSeconds) => {
+    setVoiceTranscript("");
+    setVoiceElapsed(0);
+    setVoiceError("");
+    setVoiceViolation(false);
+    setResponseSecondsLeft(timeoutSeconds);
+    hasDetectedAnswerRef.current = false;
+    voiceTranscriptRef.current = "";
+  };
+
+  const clearSessionTimers = () => {
+    if (countdownTimerRef.current !== null) {
+      window.clearInterval(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+    }
+    if (responseTimerRef.current !== null) {
+      window.clearInterval(responseTimerRef.current);
+      responseTimerRef.current = null;
+    }
+    if (responseTimeoutRef.current !== null) {
+      window.clearTimeout(responseTimeoutRef.current);
+      responseTimeoutRef.current = null;
+    }
+  };
+
+  const clearNoAnswerTimers = () => {
+    if (responseTimerRef.current !== null) {
+      window.clearInterval(responseTimerRef.current);
+      responseTimerRef.current = null;
+    }
+    if (responseTimeoutRef.current !== null) {
+      window.clearTimeout(responseTimeoutRef.current);
+      responseTimeoutRef.current = null;
+    }
+  };
+
+  const failPractice = (reason: string) => {
+    clearSessionTimers();
+    releaseVoiceResources();
+    window.speechSynthesis?.cancel();
+    isRecordingRef.current = false;
+    setIsRecording(false);
+    setVoiceStatus("idle");
+    setSessionPhase("failed");
+    setFailureReason(reason);
+    setStage("failed");
+  };
+
+  const submitVoiceAnswer = (content: string) => {
+    clearNoAnswerTimers();
+    hasDetectedAnswerRef.current = true;
+    setSessionPhase("answered");
+    setMessages((prev) => [...prev, { role: "user", content }]);
+    setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "customer",
+          content: getFollowUpCustomerMessage(selectedScenario),
+        },
+      ]);
+    }, 800);
+  };
+
+  const releaseVoiceResources = () => {
+    if (voiceTimerRef.current !== null) {
+      window.clearInterval(voiceTimerRef.current);
+      voiceTimerRef.current = null;
+    }
+
+    try {
+      if (speechRecognitionRef.current) {
+        speechRecognitionRef.current.onresult = null;
+        speechRecognitionRef.current.onerror = null;
+        speechRecognitionRef.current.stop();
+      }
+    } catch {
+      // Speech recognition may already be stopped by the browser.
+    }
+    speechRecognitionRef.current = null;
+
+    if (mediaRecorderRef.current?.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
+    mediaRecorderRef.current = null;
+
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+    mediaStreamRef.current = null;
+  };
+
+  const startNoAnswerTimeout = (timeoutSeconds: number) => {
+    clearNoAnswerTimers();
+    hasDetectedAnswerRef.current = false;
+    setResponseSecondsLeft(timeoutSeconds);
+
+    responseTimerRef.current = window.setInterval(() => {
+      setResponseSecondsLeft((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+
+    responseTimeoutRef.current = window.setTimeout(() => {
+      if (!hasDetectedAnswerRef.current) {
+        failPractice("超过 1 分钟没有检测到学员语音回答，本轮判定失败。");
+      }
+    }, timeoutSeconds * 1000);
+  };
+
+  const stopVoiceAnswer = (reason: "submit" | "background" = "submit") => {
+    if (!isRecordingRef.current) return;
+
+    const elapsed = Math.max(1, Math.round((Date.now() - voiceStartedAtRef.current) / 1000));
+    const transcript = voiceTranscriptRef.current.trim();
+    releaseVoiceResources();
+    isRecordingRef.current = false;
+    setIsRecording(false);
+    setVoiceStatus("idle");
+
+    if (reason === "background") {
+      clearNoAnswerTimers();
+      setVoiceViolation(true);
+      setVoiceError("检测到回答过程中切到后台或离开当前页面，本轮语音回答已作废，请重新开始。");
+      setVoiceTranscript("");
+      voiceTranscriptRef.current = "";
+      return;
+    }
+
+    setVoiceError("");
+    setVoiceViolation(false);
+    setVoiceElapsed(elapsed);
+    setVoiceTranscript("");
+    voiceTranscriptRef.current = "";
+    submitVoiceAnswer(transcript || `已完成 ${elapsed} 秒语音回答（系统未识别到清晰文字，按语音作答记录提交）。`);
+  };
+
+  const startVoiceAnswer = async () => {
+    if (isRecordingRef.current || voiceStatus === "processing") return;
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setVoiceError("当前浏览器不支持麦克风录音，请换用支持麦克风权限的浏览器打开陪练。");
+      return;
+    }
+
+    if (document.hidden) {
+      setVoiceError("请回到当前陪练页面后再开始语音回答。");
+      return;
+    }
+
+    setVoiceStatus("processing");
+    setVoiceError("");
+    setVoiceViolation(false);
+    setVoiceTranscript("");
+    setVoiceElapsed(0);
+    voiceTranscriptRef.current = "";
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      const recorder = new MediaRecorder(stream);
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+
+      const SpeechRecognitionCtor =
+        (window as typeof window & {
+          SpeechRecognition?: SpeechRecognitionConstructor;
+          webkitSpeechRecognition?: SpeechRecognitionConstructor;
+        }).SpeechRecognition ||
+        (window as typeof window & {
+          SpeechRecognition?: SpeechRecognitionConstructor;
+          webkitSpeechRecognition?: SpeechRecognitionConstructor;
+        }).webkitSpeechRecognition;
+
+      if (SpeechRecognitionCtor) {
+        const recognition = new SpeechRecognitionCtor();
+        let finalTranscript = "";
+        recognition.lang = "zh-CN";
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.onresult = (event) => {
+          let interimTranscript = "";
+          for (let index = event.resultIndex; index < event.results.length; index += 1) {
+            const text = event.results[index][0].transcript.trim();
+            if (event.results[index].isFinal) {
+              finalTranscript = `${finalTranscript}${text} `;
+            } else {
+              interimTranscript = `${interimTranscript}${text}`;
+            }
+          }
+          const nextTranscript = `${finalTranscript}${interimTranscript}`.trim();
+          voiceTranscriptRef.current = nextTranscript;
+          setVoiceTranscript(nextTranscript);
+          if (nextTranscript.length >= 2 && !hasDetectedAnswerRef.current) {
+            hasDetectedAnswerRef.current = true;
+            clearNoAnswerTimers();
+          }
+        };
+        recognition.onerror = () => {
+          setVoiceError("语音转写暂时不可用，但录音仍在继续，可以完成后按语音记录提交。");
+        };
+        recognition.start();
+        speechRecognitionRef.current = recognition;
+      }
+
+      voiceStartedAtRef.current = Date.now();
+      isRecordingRef.current = true;
+      setIsRecording(true);
+      setVoiceStatus("recording");
+      setSessionPhase("answering");
+      startNoAnswerTimeout(currentPracticeQuestion.timeoutSeconds);
+      voiceTimerRef.current = window.setInterval(() => {
+        setVoiceElapsed(Math.max(1, Math.round((Date.now() - voiceStartedAtRef.current) / 1000)));
+      }, 500);
+    } catch {
+      releaseVoiceResources();
+      isRecordingRef.current = false;
+      setIsRecording(false);
+      setVoiceStatus("idle");
+      setVoiceError("无法启动麦克风，请允许浏览器麦克风权限后重新开始语音回答。");
+    }
+  };
+
+  const playCustomerQuestion = (question: PracticeQuestion) => {
+    setSessionPhase("customer-speaking");
+    setMessages([{ role: "customer", content: question.customerPrompt }]);
+
+    const startStudentAnswer = () => {
+      void startVoiceAnswer();
+    };
+
+    if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
+      setVoiceError("当前浏览器不支持客户语音播报，已进入文字读题模式并自动开始监听学员回答。");
+      window.setTimeout(startStudentAnswer, 800);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(question.voiceScript);
+    utterance.lang = "zh-CN";
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    utterance.onend = startStudentAnswer;
+    utterance.onerror = startStudentAnswer;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const beginTrainingSession = (makeup = false) => {
+    const question = getPracticeQuestion(selectedScenario, makeup);
+    clearSessionTimers();
+    releaseVoiceResources();
+    window.speechSynthesis?.cancel();
+    setCurrentPracticeQuestion(question);
+    setIsMakeupMode(makeup);
+    setFailureReason("");
+    setMessages([]);
+    setCountdownValue(3);
+    setResponseSecondsLeft(question.timeoutSeconds);
+    setSessionPhase("countdown");
+    resetVoiceAnswerState(question.timeoutSeconds);
+    setStage("session");
+
+    let nextCountdown = 3;
+    countdownTimerRef.current = window.setInterval(() => {
+      nextCountdown -= 1;
+      if (nextCountdown > 0) {
+        setCountdownValue(nextCountdown);
+        return;
+      }
+
+      if (countdownTimerRef.current !== null) {
+        window.clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
+      }
+      setCountdownValue(0);
+      playCustomerQuestion(question);
+    }, 1000);
+  };
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && isRecordingRef.current) {
+        stopVoiceAnswer("background");
+      }
+    };
+    const handleWindowBlur = () => {
+      if (isRecordingRef.current) {
+        stopVoiceAnswer("background");
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("blur", handleWindowBlur);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("blur", handleWindowBlur);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (stage !== "session" && isRecordingRef.current) {
+      releaseVoiceResources();
+      isRecordingRef.current = false;
+      setIsRecording(false);
+      setVoiceStatus("idle");
+    }
+    if (stage !== "session") {
+      clearSessionTimers();
+      window.speechSynthesis?.cancel();
+    }
+  }, [stage]);
+
+  useEffect(() => {
+    return () => {
+      clearSessionTimers();
+      window.speechSynthesis?.cancel();
+      releaseVoiceResources();
+    };
+  }, []);
+
+  if (stage === "failed") {
+    return (
+      <div className="min-h-full bg-[#F5F7FA] px-4 md:px-6 py-8">
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-[#DC2626] px-6 py-6 text-white">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center">
+                  <CircleAlert size={22} />
+                </div>
+                <div>
+                  <p className="text-white/70 text-xs mb-1">本轮陪练失败</p>
+                  <h2 className="text-white text-lg">超过 1 分钟未检测到有效语音回答</h2>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3">
+                <p className="text-sm text-[#DC2626] font-medium mb-1">失败原因</p>
+                <p className="text-xs text-red-700 leading-relaxed">{failureReason || "系统没有在规定时间内检测到学员回答。"}</p>
+              </div>
+
+              <div className="rounded-xl bg-[#F5F7FA] px-4 py-3">
+                <p className="text-xs text-gray-400 mb-1">{isMakeupMode ? "补考题" : "本轮题目"}</p>
+                <p className="text-sm text-gray-800 leading-relaxed">{currentPracticeQuestion.customerPrompt}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => beginTrainingSession(false)}
+                  className="flex items-center justify-center gap-2 rounded-xl border border-[#2F5FD0] py-3 text-sm text-[#2F5FD0] hover:bg-blue-50 transition-colors"
+                >
+                  <RotateCcw size={15} /> 重考本题
+                </button>
+                <button
+                  onClick={() => beginTrainingSession(true)}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-[#2F5FD0] py-3 text-sm text-white hover:bg-[#2550B8] transition-colors"
+                >
+                  <Play size={15} /> 进入补考题
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (stage === "result") {
 
@@ -626,7 +1152,7 @@ export default function AIPractice() {
 
           <div className="flex gap-3">
             <button
-              onClick={() => setStage("session")}
+              onClick={() => beginTrainingSession(false)}
               className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-[#2F5FD0] text-[#2F5FD0] rounded-xl text-sm hover:bg-blue-50 transition-colors"
             >
               <RotateCcw size={15} /> 再练一次
@@ -678,6 +1204,30 @@ export default function AIPractice() {
 
           <div className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col min-h-[520px]">
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+              {sessionPhase === "countdown" && (
+                <div className="h-full min-h-[360px] flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="mx-auto mb-4 w-24 h-24 rounded-full bg-[#2F5FD0] text-white flex items-center justify-center text-5xl font-bold shadow-lg">
+                      {countdownValue}
+                    </div>
+                    <p className="text-sm font-medium text-gray-900">准备开始语音陪练</p>
+                    <p className="text-xs text-gray-500 mt-1">倒计时结束后，客户会自动语音读题，随后系统开始监听学员回答。</p>
+                  </div>
+                </div>
+              )}
+
+              {sessionPhase === "customer-speaking" && (
+                <div className="rounded-xl border border-blue-100 bg-[#F8FAFF] px-4 py-3 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#2F5FD0] text-white flex items-center justify-center">
+                    <Mic size={18} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">客户正在语音提问</p>
+                    <p className="text-xs text-gray-500 mt-0.5">请听完问题，系统会自动进入学员语音回答检测。</p>
+                  </div>
+                </div>
+              )}
+
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                   {msg.role === "customer" && (
@@ -701,42 +1251,68 @@ export default function AIPractice() {
             </div>
 
             <div className="bg-white border-t border-gray-200 px-4 py-3 flex-shrink-0">
-              <div className="flex items-end gap-2">
-                <div className="flex-1 bg-[#F5F7FA] border border-gray-200 rounded-xl px-4 py-2.5 focus-within:border-[#2F5FD0]">
-                  <textarea
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    placeholder="输入你的回应话术..."
-                    className="w-full bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none resize-none"
-                    rows={2}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
+              <div className="rounded-xl border border-blue-100 bg-[#F8FAFF] px-4 py-3">
+                <div className="flex items-start gap-3">
+                  <div className={`mt-0.5 w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${isRecording ? "bg-[#DC2626] text-white" : "bg-[#2F5FD0] text-white"}`}>
+                    {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-medium text-gray-900">必须语音回答</p>
+                      <span className={`text-xs rounded-full px-2 py-0.5 ${isRecording ? "bg-red-50 text-[#DC2626]" : "bg-blue-50 text-[#2F5FD0]"}`}>
+                        {sessionPhase === "countdown"
+                          ? `倒计时 ${countdownValue}`
+                          : sessionPhase === "customer-speaking"
+                            ? "客户读题中"
+                            : isRecording
+                              ? `录音中 ${voiceElapsed}s`
+                              : "等待语音"}
+                      </span>
+                      {sessionPhase === "answering" && (
+                        <span className="text-xs rounded-full bg-amber-50 px-2 py-0.5 text-amber-700">
+                          剩余 {responseSecondsLeft}s
+                        </span>
+                      )}
+                      {voiceViolation && <span className="text-xs rounded-full bg-red-50 px-2 py-0.5 text-[#DC2626]">本轮已作废</span>}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                      {sessionPhase === "countdown"
+                        ? "系统会自动完成倒计时、客户语音读题和学员语音监听。"
+                        : sessionPhase === "customer-speaking"
+                          ? "客户问题播报结束后会自动开启麦克风监听，不需要手动点击。"
+                          : "AI 陪练只接受麦克风回答；录音期间请保持当前页面在前台，切到后台、切换标签页或离开窗口会让本轮回答作废。"}
+                    </p>
+                    {voiceTranscript && (
+                      <div className="mt-3 rounded-lg bg-white border border-gray-200 px-3 py-2">
+                        <p className="text-[11px] text-gray-400 mb-1">实时转写预览</p>
+                        <p className="text-sm text-gray-700 leading-relaxed">{voiceTranscript}</p>
+                      </div>
+                    )}
+                    {voiceError && (
+                      <div className="mt-3 rounded-lg bg-red-50 border border-red-100 px-3 py-2 text-xs text-[#DC2626] leading-relaxed">
+                        {voiceError}
+                      </div>
+                    )}
+                  </div>
                   <button
-                    onClick={() => setIsRecording(!isRecording)}
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isRecording ? "bg-[#DC2626] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
+                    type="button"
+                    onClick={() => (isRecording ? stopVoiceAnswer("submit") : void startVoiceAnswer())}
+                    disabled={voiceStatus === "processing" || sessionPhase === "countdown" || sessionPhase === "customer-speaking" || sessionPhase === "answered"}
+                    className={`min-w-32 rounded-xl px-4 py-2.5 text-sm transition-colors ${
+                      isRecording
+                        ? "bg-[#DC2626] text-white hover:bg-red-700"
+                        : "bg-[#2F5FD0] text-white hover:bg-[#2550B8] disabled:bg-gray-200 disabled:text-gray-400"
+                    }`}
                   >
-                    {isRecording ? <MicOff size={16} /> : <Mic size={16} />}
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (inputValue.trim()) {
-                        setMessages((prev) => [...prev, { role: "user", content: inputValue }]);
-                        setInputValue("");
-                        setTimeout(() => {
-                          setMessages((prev) => [
-                            ...prev,
-                            {
-                              role: "customer",
-                              content: getFollowUpCustomerMessage(selectedScenario),
-                            },
-                          ]);
-                        }, 800);
-                      }
-                    }}
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${inputValue.trim() ? "bg-[#2F5FD0] text-white hover:bg-[#2550B8]" : "bg-gray-100 text-gray-400"}`}
-                  >
-                    <Send size={16} />
+                    {isRecording
+                      ? "完成并提交"
+                      : sessionPhase === "answered"
+                        ? "已提交"
+                        : voiceStatus === "processing"
+                          ? "启动麦克风..."
+                          : voiceError
+                            ? "重新开启麦克风"
+                            : "自动监听中"}
                   </button>
                 </div>
               </div>
@@ -869,15 +1445,20 @@ export default function AIPractice() {
                   </p>
                 </div>
               )}
+
+              <div className="bg-[#EEF2FF] border border-blue-100 rounded-lg px-3 py-2.5">
+                <div className="flex items-start gap-2">
+                  <Mic size={13} className="text-[#2F5FD0] mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    本课题来自测试题库。点击开始训练后会先 3、2、1 倒计时，再由客户语音读题；读题结束后自动监听学员语音，1 分钟内未检测到回答会判定失败，只能重考或补考。
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
           <button
-            onClick={() => {
-              setMessages(getInitialConversation(selectedScenario));
-              setInputValue("");
-              setStage("session");
-            }}
+            onClick={() => beginTrainingSession(false)}
             className="w-full bg-[#2F5FD0] hover:bg-[#2550B8] text-white py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors"
           >
             <Play size={16} />
@@ -925,8 +1506,11 @@ export default function AIPractice() {
             key={scenario.id}
             className="bg-white rounded-xl shadow-sm hover:shadow-md cursor-pointer transition-all p-4"
             onClick={() => {
+              const question = getPracticeQuestion(scenario);
               setSelectedScenario(scenario);
-              setMessages(getInitialConversation(scenario));
+              setCurrentPracticeQuestion(question);
+              setMessages([{ role: "customer", content: question.customerPrompt }]);
+              resetVoiceAnswerState(question.timeoutSeconds);
               setStage("briefing");
             }}
           >

@@ -36,12 +36,18 @@ import {
   trendData,
   weakAreas,
 } from "../data/growthData";
+import { getDynamicGrowthProfile } from "../data/dynamicLearningProfile";
 import { getLearnerRoleMeta, useApp } from "../context/AppContext";
 
 export default function Growth() {
   const navigate = useNavigate();
   const { user, currentIdentity } = useApp();
-  const learnerRoleMeta = getLearnerRoleMeta(user?.learnerRole);
+  const selectedLearnerRole = user?.learnerRole ?? "sales";
+  const learnerRoleMeta = getLearnerRoleMeta(selectedLearnerRole);
+  const dynamicGrowth = useMemo(() => getDynamicGrowthProfile(selectedLearnerRole), [selectedLearnerRole]);
+  const dynamicWeakAreas = currentIdentity === "student" ? dynamicGrowth.weakAreas : weakAreas;
+  const dynamicRadarData = currentIdentity === "student" ? dynamicGrowth.radarData : radarData;
+  const dynamicMilestones = currentIdentity === "student" ? dynamicGrowth.milestones : milestones;
   const previewTasks = useMemo(() => retrainTasks.slice(0, 3), []);
   const latestReview = reviewResults[0];
   const showGrowthHeaderHint = false;
@@ -68,20 +74,26 @@ export default function Growth() {
           <div className="flex items-center gap-4 mt-4 p-4 bg-[#1E2A3A] rounded-xl">
 
             <div className="text-center">
-              <div className="text-4xl font-bold text-white">78</div>
-              <div className="text-white/50 text-xs">综合能力分</div>
+              <div className="text-4xl font-bold text-white">{currentIdentity === "student" ? dynamicGrowth.scoreLabel : "78"}</div>
+              <div className="text-white/50 text-xs">{currentIdentity === "student" ? dynamicGrowth.scoreSub : "综合能力分"}</div>
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1.5">
                 <TrendingUp size={13} className="text-[#16A34A]" />
-                <span className="text-xs text-[#16A34A]">较上月提升 +6 分</span>
+                <span className="text-xs text-[#16A34A]">
+                  {currentIdentity === "student" ? `已接入 ${dynamicGrowth.knowledgeCount} 条知识库材料` : "较上月提升 +6 分"}
+                </span>
               </div>
               <div className="grid grid-cols-3 gap-2">
-                {[
+                {(currentIdentity === "student" ? [
+                  { label: "必修完成率", value: `${dynamicGrowth.requiredCourseRate}%` },
+                  { label: "陪练次数", value: `${dynamicGrowth.practiceDone}/${dynamicGrowth.practiceTotal}` },
+                  { label: "考核通过率", value: dynamicGrowth.assessmentRateLabel },
+                ] : [
                   { label: "必修完成率", value: "100%" },
                   { label: "陪练次数", value: "7/10" },
                   { label: "考核通过率", value: "83%" },
-                ].map((s, i) => (
+                ]).map((s, i) => (
                   <div key={i} className="text-center">
                     <div className="text-sm font-medium text-white">{s.value}</div>
                     <div className="text-xs text-white/50">{s.label}</div>
@@ -117,18 +129,22 @@ export default function Growth() {
                 <span className="text-xs text-gray-400 ml-auto">按优先级排序</span>
               </div>
               <div className="divide-y divide-gray-50">
-                {weakAreas.map((area) => (
+                {dynamicWeakAreas.map((area) => (
                   <div key={area.id} className="p-4" style={{ borderLeft: `3px solid ${area.urgency === "high" ? "#DC2626" : "#F59E0B"}` }}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className="text-sm font-medium text-gray-900">{area.area}</span>
-                          <span className="text-xs text-[#DC2626] bg-red-50 px-1.5 py-0.5 rounded">{area.score}分</span>
-                          <span className="text-xs text-gray-400">差 {area.gap} 分达到均线</span>
+                          <span className="text-xs text-[#DC2626] bg-red-50 px-1.5 py-0.5 rounded">
+                            {area.score === null ? "未测" : `${area.score}分`}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {area.score === null ? "待完成考核生成真实分数" : `差 ${area.gap} 分达到均线`}
+                          </span>
                         </div>
                         <p className="text-xs text-gray-500 mb-2">📌 {area.reason}</p>
                         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
-                          <div className="h-full rounded-full bg-[#DC2626]" style={{ width: `${area.score}%` }} />
+                          <div className="h-full rounded-full bg-[#DC2626]" style={{ width: `${area.score ?? 0}%` }} />
                         </div>
                         <div className="bg-[#F5F7FA] rounded p-2">
                           <p className="text-xs text-gray-500">💡 建议动作：{area.action}</p>
@@ -136,13 +152,13 @@ export default function Growth() {
                       </div>
                       <div className="flex-shrink-0 flex flex-col gap-2 min-w-[88px]">
                         <button
-                          onClick={() => navigate(`/learning/growth/weak-area/${area.id}`)}
+                          onClick={() => navigate(currentIdentity === "student" && area.id.startsWith("kb-") ? "/learning" : `/learning/growth/weak-area/${area.id}`)}
                           className="bg-white border border-gray-200 hover:border-[#2F5FD0]/40 text-gray-700 px-3 py-1.5 rounded text-xs transition-colors"
                         >
                           查看详情
                         </button>
                         <button
-                          onClick={() => navigate("/learning/growth/retrain")}
+                          onClick={() => navigate(currentIdentity === "student" && area.id.startsWith("kb-") ? "/learning/ai-practice" : "/learning/growth/retrain")}
                           className="bg-[#DC2626] hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs transition-colors"
                         >
                           立即补训
@@ -294,7 +310,7 @@ export default function Growth() {
               <p className="text-sm font-medium text-gray-900 mb-2">能力雷达图</p>
               <div className="h-44">
                 <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={radarData}>
+                  <RadarChart data={dynamicRadarData}>
                     <PolarGrid stroke="#E5E7EB" />
                     <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9, fill: "#6B7280" }} />
                     <Radar name="能力" dataKey="A" stroke="#2F5FD0" fill="#2F5FD0" fillOpacity={0.15} />
@@ -309,7 +325,7 @@ export default function Growth() {
                 <span className="text-sm font-medium text-gray-900">转岗资格进度</span>
               </div>
               <div className="space-y-2.5">
-                {milestones.map((m, i) => (
+                {dynamicMilestones.map((m, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
                       m.done ? "bg-[#16A34A]" : m.locked ? "bg-gray-200" : "bg-[#F5F7FA] border-2 border-gray-200"
